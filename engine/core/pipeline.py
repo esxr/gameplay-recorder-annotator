@@ -5,6 +5,7 @@ analysis on a further 4× subsampled image (numpy vectorised). A 2-frame lookahe
 2-frame flashes be told apart from sustained scene cuts.
 """
 import copy
+from concurrent.futures import Future
 import hashlib
 import json
 import os
@@ -156,6 +157,12 @@ class Engine:
         self.ocr_calls = 0
         self.ocr_cache = {}
         self.ocr_q = deque()
+        self.outq = deque()
+        self.prev_written = None
+        self.n_written = 0
+        self.stored_bytes = 0
+        self.flashes = []            # (start, end)
+        self.hud_cand = {}           # name -> (value, f) awaiting confirmation
         self.ocr_done = []
         from concurrent.futures import ThreadPoolExecutor
         self.ocr_pool = ThreadPoolExecutor(max_workers=6)
@@ -263,47 +270,81 @@ class Engine:
         th = g > (g.max() + g.min()) / 2
         return hashlib.md5(np.packbits(th).tobytes() + str(th.shape).encode()).hexdigest(), frame[y0:y1, x0:x1]
 
-    def revalidate_box(self, f, frame, name, nb, is_hud):
-        """REVALIDATE: checksum of binarised crop; OCR (async tesseract pool) only on an unseen checksum."""
+    def revalidate_box(self, f, frame, name, nb, is_hud, confirm=False):
+        """REVALIDATE: checksum of binarised crop; OCR (async tesseract pool) only on an unseen checksum.
+        Results are applied strictly in frame order (cache hits go through the same queue)."""
         sig, crop_arr = self.box_sig(frame, nb)
         if sig is None:
             return
-        key = (name, sig)
+        key = (name, sig, confirm)
         if key in self.ocr_cache:
-            self.ocr_done.append((f, frame, name, nb, is_hud, self.ocr_cache[key]))
-            return
-        if self.ocr_calls > max(300, 0.1 * self.nb) or len(self.ocr_q) > 12:
-            return
-        self.ocr_calls += 1
-        fut = self.ocr_pool.submit(ocrmod.ocr_line_robust, crop_arr.copy(), ocrmod.WL if is_hud else None)
+            fut = Future(); fut.set_result(self.ocr_cache[key])
+        else:
+            if self.ocr_calls > max(400, 0.15 * self.nb):
+                return
+            self.ocr_calls += 1
+            fn = ocrmod.ocr_line_confirm if confirm else ocrmod.ocr_line_robust
+            fut = self.ocr_pool.submit(fn, crop_arr.copy(), ocrmod.WL if is_hud else None)
         self.ocr_q.append((fut, key, f, frame, name, nb, is_hud))
 
-    def poll_ocr(self, wait=False):
-        while self.ocr_q and (wait or self.ocr_q[0][0].done()):
+    def poll_ocr(self, wait=False, wait_one=False):
+        while self.ocr_q and (wait or wait_one or self.ocr_q[0][0].done()):
+            wait_one = False
             fut, key, f0, fr0, name, nb, is_hud = self.ocr_q.popleft()
             try:
                 txt = fut.result()
             except Exception:
                 txt = ""
             self.ocr_cache[key] = txt
-            self.ocr_done.append((f0, fr0, name, nb, is_hud, txt))
-        done, self.ocr_done = self.ocr_done, []
-        for f, frame, name, nb, is_hud, txt in done:
-            self.apply_ocr(f, frame, name, nb, is_hud, txt)
+            self.apply_ocr(f0, fr0, name, nb, is_hud, txt, confirm=key[2])
 
-    def apply_ocr(self, f, frame, name, nb, is_hud, txt):
+    def apply_ocr(self, f, frame, name, nb, is_hud, txt, confirm=False):
         if is_hud:
             vals = [v for k, v in ocrmod.parse_hud(txt) if k == name]
-            if not vals:
-                return
-            val = vals[0]
             old = self.state["hud"].get(name)
-            if old is None or old["v"] != val:
-                crop = self.crop_save(frame, nb, f, f"hud_{name}")
-                if old is not None:
-                    self.event("ui_value_changed", f, f, 0.85, "observed", f, nb, crop, entity=f"hud.{name}",
-                               **{"from": old["v"], "to": val})
-                self.state["hud"][name] = field(val, 0.9, "observed", f, nb, crop)
+            cand = self.hud_cand.get(name)
+            if confirm:
+                # second, independent read (other scales): commit only if it agrees with the candidate
+                if cand is None:
+                    return
+                if not vals or vals[0] != cand[0]:
+                    if vals and cand[2] < 1 and (old is None or vals[0] != old["v"]):
+                        # disagreement → the confirmation read becomes the candidate and is re-checked
+                        self.hud_cand[name] = (vals[0], cand[1], cand[2] + 1)
+                        self.revalidate_box(cand[1], frame, name, nb, True, confirm=True)
+                    else:
+                        self.hud_cand.pop(name, None)
+                    return
+                self.hud_cand.pop(name, None)
+                val, f = cand[0], cand[1]
+            else:
+                if not vals:
+                    return
+                val = vals[0]
+                if old is not None and old["v"] == val:
+                    self.hud_cand.pop(name, None)
+                    return
+                if old is None:
+                    crop = self.crop_save(frame, nb, f, f"hud_{name}")
+                    self.state["hud"][name] = field(val, 0.9, "observed", f, nb, crop)
+                    self.backpatch("hud", name, self.state["hud"][name], f)
+                    return
+                self.hud_cand[name] = (val, f, 0)
+                self.revalidate_box(f, frame, name, nb, True, confirm=True)
+                return
+            if old is not None and old["v"] == val:
+                return
+            crop = self.crop_save(frame, nb, f, f"hud_{name}")
+            f_eff, src, conf = f, "observed", 0.9
+            for fs, fe in self.flashes[-2:]:
+                if fe < f <= fe + 2:          # change hidden under a flash → date it to the flash start
+                    f_eff, src, conf = fs, "inferred", 0.75
+            if old is not None:
+                self.event("ui_value_changed", f_eff, f_eff, conf - 0.05, src, f, nb, crop, entity=f"hud.{name}",
+                           **{"from": old["v"], "to": val})
+            fld = field(val, conf, src, f_eff, nb, crop)
+            self.state["hud"][name] = fld
+            self.backpatch("hud", name, fld, f_eff)
         else:
             txt = " ".join(txt.split())
             if sum(c.isalpha() for c in txt) < 4:
@@ -315,6 +356,7 @@ class Engine:
                     self.event("text_changed", f, f, 0.8, "observed", f, nb, crop, entity=f"text.{name}",
                                **{"from": old["v"], "to": txt})
                 self.state["text"][name] = field(txt, 0.85, "observed", f, nb, crop)
+                self.backpatch("text", name, self.state["text"][name], f)
 
     def reidentify(self, cand, f):
         """Match a newly confirmed blob to a recently lost track (≤ lost window) by colour signature + size."""
@@ -340,6 +382,37 @@ class Engine:
         best.anchor_bb = [float(v) for v in best.bbox]
         best.sig = 0.5 * best.sig + 0.5 * cand.sig
         return best
+
+    def flush_out(self, stream, final=False):
+        """Write buffered frames whose OCR observations are all resolved (so values land at the observed frame)."""
+        while self.outq:
+            if not final:
+                oldest = min(q[2] for q in self.ocr_q) if self.ocr_q else None
+                if oldest is not None and self.outq[0]["f"] >= oldest - 3:
+                    if len(self.outq) < 900:
+                        break
+                    self.poll_ocr(wait_one=True)
+                    continue
+                if len(self.outq) <= 3:      # keep a few frames for flash back-dating
+                    break
+            e = self.outq.popleft()
+            if e["snap"] or self.prev_written is None:
+                rec = {"f": e["f"], "t_ms": e["t_ms"], "kind": "snapshot", "modes": e["modes"], "state": e["state"],
+                       "vlm": e["vlm"]}
+            else:
+                rec = {"f": e["f"], "t_ms": e["t_ms"], "kind": "delta", "modes": e["modes"],
+                       "delta": diff(self.prev_written, e["state"]), "vlm": e["vlm"]}
+            line = json.dumps(rec, separators=(",", ":"))
+            self.stored_bytes += len(line) + 1
+            stream.write(line + "\n")
+            self.n_written += 1
+            self.prev_written = e["state"]
+
+    def backpatch(self, kind, name, fld, f_eff):
+        """Apply an observation to every buffered (unwritten) frame ≥ f_eff."""
+        for e in self.outq:
+            if e["f"] >= f_eff:
+                e["state"][kind][name] = copy.deepcopy(fld)
 
     def bbox_field(self, t, f, bb, conf, src):
         """Re-emit an entity's bbox field only when it moved > EMIT_MOVE (or provenance changed) → small deltas."""
@@ -485,6 +558,7 @@ class Engine:
                                 is_F = True
                     if k:
                         flash_until = f + k - 1
+                        self.flashes.append((f, f + k - 1))
                         in_flash = True
                         crop = self.crop_save(frame, [0, 0, 1, 1], f, "flash")
                         self.event("flash", f, f + k - 1, 0.9 if frac >= FLASH_FRAC else 0.7, "observed", f,
@@ -579,7 +653,7 @@ class Engine:
                         x0, y0, x1, y1 = self.box_px(t.bbox, hh, ww)
                         self.ui_mask[y0:y1 + 1, x0:x1 + 1] = True
                         continue
-                    if t.last_seen == f and t.hits >= 3 and disp >= CONFIRM_MOVE:
+                    if t.last_seen == f and t.hits >= 10 and disp >= CONFIRM_MOVE:
                         rt = self.reidentify(t, f)
                         if rt is not None:
                             new_cells.update(cells_of(t.bbox))
@@ -595,7 +669,7 @@ class Engine:
                         self.event("entity_created", t.first, f, 0.8, "observed", f, t.bbox, t.crop, entity=t.id)
                         new_cells.update(cells_of(t.bbox))
                         t._vlm = True  # noqa
-                    elif f - t.last_seen < 3:
+                    elif f - t.last_seen < 5:
                         still.append(t)
                 self.tent = still
                 # hidden / removal
@@ -743,16 +817,9 @@ class Engine:
             mstr = "".join(modes)
             self.mode_hist.update(mstr)
             t_ms = rnd(f * 1000.0 / self.fps, 2)
-            if f % SNAP_EVERY == 0 or is_F:
-                rec = {"f": f, "t_ms": t_ms, "kind": "snapshot", "modes": mstr, "state": self.state, "vlm": vlm_this}
-            else:
-                rec = {"f": f, "t_ms": t_ms, "kind": "delta", "modes": mstr, "delta": diff(prev_state, self.state),
-                       "vlm": vlm_this}
-            line = json.dumps(rec, separators=(",", ":"))
-            stored_bytes += len(line) + 1
-            stream.write(line + "\n")
-            n_written += 1
-            prev_state = copy.deepcopy(self.state)
+            self.outq.append({"f": f, "t_ms": t_ms, "snap": f % SNAP_EVERY == 0 or is_F, "modes": mstr,
+                              "vlm": vlm_this, "state": copy.deepcopy(self.state)})
+            self.flush_out(stream)
             wi = int(f / self.fps // 10)
             win = windows.setdefault(wi, {"window": wi, "f_start": f, "t_start_s": wi * 10, "modes": Counter(),
                                           "entities": set(), "vlm_frames": 0})
@@ -778,7 +845,9 @@ class Engine:
         late = len(self.pending)
         for fut, _, _ in self.pending:
             fut.cancel()
-        self.poll_ocr(wait=True)          # late OCR results still yield exact-frame events
+        self.poll_ocr(wait=True)          # late OCR results are back-patched into still-buffered frames
+        self.flush_out(stream, final=True)
+        n_written, stored_bytes = self.n_written, self.stored_bytes
         self.ocr_pool.shutdown(wait=False)
         stream.close()
         if self.vlm:

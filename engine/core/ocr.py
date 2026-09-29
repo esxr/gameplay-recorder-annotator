@@ -131,3 +131,16 @@ def ocr_line_robust(arr, whitelist=None):
         return a
     c = ocr_line(pad, 2, whitelist)
     return b if b == c else a
+
+
+def ocr_line_confirm(arr, whitelist=None):
+    """Independent confirmation read (different scales/padding than ocr_line_robust)."""
+    if arr.size == 0:
+        return ""
+    pad = np.pad(arr, ((10, 10), (12, 12), (0, 0)), mode="edge")
+    a = ocr_line(pad, 5, whitelist)
+    b = ocr_line(pad, 2.5, whitelist)
+    if a == b:
+        return a
+    c = ocr_line(pad, 3.5, whitelist)
+    return c if c in (a, b) else a

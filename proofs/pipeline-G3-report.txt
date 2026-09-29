@@ -13,11 +13,11 @@ truth flash frames present in video: 10 runs (gf flash frames seen: [317, 611, 6
 flash exact-frame (±0) matches: 10/10  engine flash events=10  (>=9/10: PASS)
 1 fps baseline (frames round(k*60)): catches 0/10 flashes  (<=3: PASS)
 HUD health: truth changes in video=10
-   ui_value_changed event at exact frame with correct new value: 0/10 = 0.0%  (>=90%: FAIL)
-   state field with provenance frame f == change frame and correct value: 0/10
-   state value already correct AT the change frame (get_state(f)): 0/10  (state commit lag: value written after confirmation, field.f carries the observed frame)
+   ui_value_changed event at exact frame with correct new value: 9/10 = 90.0%  (>=90%: PASS)
+   state field with provenance frame f == change frame and correct value: 9/10
+   state value already correct AT the change frame (get_state(f)): 9/10  (state commit lag: value written after confirmation, field.f carries the observed frame)
 HUD ammo: truth changes in video=31
-   ui_value_changed event at exact frame with correct new value: 31/31 = 100.0%  (>=90%: PASS)
-   state field with provenance frame f == change frame and correct value: 31/31
-   state value already correct AT the change frame (get_state(f)): 0/31  (state commit lag: value written after confirmation, field.f carries the observed frame)
-ui_value_changed events=72  event_started-type (flash) events=10
+   ui_value_changed event at exact frame with correct new value: 14/31 = 45.2%  (>=90%: FAIL)
+   state field with provenance frame f == change frame and correct value: 14/31
+   state value already correct AT the change frame (get_state(f)): 14/31  (state commit lag: value written after confirmation, field.f carries the observed frame)
+ui_value_changed events=39  event_started-type (flash) events=10
