@@ -25,3 +25,4 @@ scratch/rectest/out.txt
 *.mp4
 scratch/tools/*
 !scratch/tools/*.swift
+.venv/

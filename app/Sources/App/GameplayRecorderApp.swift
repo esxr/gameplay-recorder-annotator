@@ -40,6 +40,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 if let m = (n.object as? String).flatMap(CaptureMode.init(rawValue:)) { self.toolbar.show(mode: m) } else { self.toolbar.show() }
             }
         }
+        // `grctl record "x,y,w,h"` (global AppKit points) records a region without showing the toolbar or taking focus.
+        DistributedNotificationCenter.default().addObserver(forName: .init("com.operantlabs.GameplayRecorder.record"), object: nil, queue: .main) { [weak self] n in
+            MainActor.assumeIsolated {
+                guard let self, !self.recorder.isRecording, let screen = NSScreen.main else { return }
+                let p = ((n.object as? String) ?? "").split(separator: ",").compactMap { Double($0.trimmingCharacters(in: .whitespaces)) }
+                let rect = p.count == 4 ? CGRect(x: p[0], y: p[1], width: p[2], height: p[3]) : nil
+                let req = RecordingRequest(mode: rect == nil ? .recordEntireScreen : .recordSelectedPortion, screen: screen, rect: rect)
+                AppLog.log("record_requested", ["mode": "\(req.mode)", "rect": rect.map { NSStringFromRect($0) } ?? "nil", "via": "automation"])
+                Task { @MainActor in await self.startRecording(req) }
+            }
+        }
         DistributedNotificationCenter.default().addObserver(forName: .init("com.operantlabs.GameplayRecorder.primary"), object: nil, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated { self?.toolbar.triggerPrimary() }
         }
