@@ -27,7 +27,7 @@ UI is modelled *semantically* rather than as pixels (PRD §15):
 
 - **Parsing.** A specialised UI pipeline "inspired by [[screenai]] and [[omniparser]]" rather than natural-image models (PRD §61). [[ferret-ui]] is cited for grounded handling of tiny icons and text (PRD §9.3).
 - **Persistence.** UI elements hold stable IDs across frames. Unchanged values COPY cheaply, and text-like values revalidate via OCR checksum (PRD §12). See [[ocr-and-text]].
-- **Specialisation.** A [[game-adapters|game adapter]] may turn generic detections into named fields "after observing repeated structure" (PRD §15, §44). HUD templates are a prime target for learning from repetition (PRD §45).
+- **Specialisation.** A game adapter ([[game-adapters]]) may turn generic detections into named fields "after observing repeated structure" (PRD §15, §44). HUD templates are a prime target for learning from repetition (PRD §45).
 - **Tiny features.** Mitigation for tiny UI features is a separate UI parser, high-resolution crops, and stable ROI definitions (PRD §57).
 
 ## Requirements satisfied
@@ -38,7 +38,7 @@ FR-05 (detect and persist UI/HUD elements), FR-07 (track numerical UI values ove
 
 Generic VLM resolution misses tiny features. Semantically huge HUD changes (health 91 → 9) are visually small ([[change-versus-meaning]]). Menus and overlays occlude HUD. See [[failure-modes]].
 
-> ⚠️ Tension: The example shows `"unit": "percent"` and a named `hud.health`, but without a [[game-adapters|game adapter]] the generic engine has no way to know a bar's unit or that it is health. The PRD does not specify what the generic, adapter-free HUD output looks like, although the engine "should work without game-specific integration" (§44).
+> ⚠️ Tension: The example shows `"unit": "percent"` and a named `hud.health`, but without a game adapter ([[game-adapters]]) the generic engine has no way to know a bar's unit or that it is health. The PRD does not specify what the generic, adapter-free HUD output looks like, although the engine "should work without game-specific integration" (§44).
 
 > ⚠️ Tension: The research cited ([[screenai]], [[omniparser]], [[ferret-ui]]) targets static app and web screenshots. Nothing addresses temporal HUD issues: animated bars, damage-flash tinting, or diegetic UI rendered in world space.
 

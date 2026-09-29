@@ -24,7 +24,7 @@ Normalised text · exact observed string · location · style (where useful) · 
 
 - **Selective retriggering.** OCR re-runs only when a text region changes, confidence falls, geometry changes, a new region appears, or a downstream query demands high-confidence OCR (PRD §16).
 - **Cheap validation.** An "OCR checksum" is a REVALIDATE-tier test (PRD §12). `OCR_difference` is a term in [[change-importance-scoring]] (PRD §22).
-- **Structure.** A [[game-adapters|game adapter]] parses raw strings into fields, e.g. `"27 / 160"` → `ammo.current = 27`, `ammo.reserve = 160` (PRD §44).
+- **Structure.** A game adapter ([[game-adapters]]) parses raw strings into fields, e.g. `"27 / 160"` → `ammo.current = 27`, `ammo.reserve = 160` (PRD §44).
 - **Query-time fidelity.** "What did the notification say?" prioritises OCR, exact crops, and text confidence (PRD §29; [[query-adaptive-fidelity]]).
 - **Streaming.** A `text_changed` event is published (PRD §40).
 

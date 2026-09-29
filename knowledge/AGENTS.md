@@ -51,7 +51,7 @@ Source pages use `source:` (single path) instead of `sources:`.
 
 ## Conventions
 
-- Filenames `kebab-case.md`; links are `[[slug]]` (no folder prefix, no `.md`).
+- Filenames `kebab-case.md`; links are `[[slug]]` or `[[slug|display text]]` (no folder prefix, no `.md`).
 - Cite the PRD inline as `(PRD §12)`. Every non-obvious claim should have a § reference.
 - **External claims are unverified.** Figures the PRD attributes to third parties (e.g. "SAM 3.1: 32 fps for 16 objects on one H100", "MeToM 2.65×") are recorded as *the PRD's claims*, not independently verified facts. Mark them with `> 🔎 Unverified: ...` until a primary source is ingested into `raw/`.
 - The PRD's `citeturn…` markers are export artifacts from a chat tool; they do not resolve to anything. Don't copy them into wiki pages.
