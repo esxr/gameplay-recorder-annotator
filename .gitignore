@@ -21,3 +21,7 @@ proofs/*.mp4
 !proofs/G1-compare.png
 scratch/reviewtest/ReviewHarness
 scratch/rectest/out.txt
+*.mov
+*.mp4
+scratch/tools/*
+!scratch/tools/*.swift
