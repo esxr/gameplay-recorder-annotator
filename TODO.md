@@ -15,7 +15,7 @@
 |---|------|-------|-------|--------|
 | P0 | Contract, .venv (numpy+PIL copied locally; PyPI unreachable), `grctl record x,y,w,h` hook | orchestrator | engine/CONTRACT.md, app/Sources/App | done 03:47 |
 | P1 | Test game + truth.jsonl + recording of it via app (no focus steal) | agent-testgame | testgame/ | redo: native 60 Hz game in normal background window + window-ID capture (browser run invalid: wrong screen, 30 fps) |
-| P2 | Engine core: decode every frame, 8×6 change analysis, 5-mode scheduler, tracker ids, HUD OCR, flashes, VLM on R/F, snapshot+delta store, evidence | agent-engine | engine/core/, engine/run.py | done 04:12 (4580/4580 frames, 99.6% C+P+V, 0.52% VLM, 10/10 flashes, 72/72 HUD, 16.8× compression); fixing 43→~5 entity ids |
+| P2 | Engine core: decode every frame, 8×6 change analysis, 5-mode scheduler, tracker ids, HUD OCR, flashes, VLM on R/F, snapshot+delta store, evidence | agent-engine | engine/core/, engine/run.py | done 04:31: final report G1-G4 all PASS (ids 43→17, id switches 0.33%, health 10/10, ammo 30/31) |
 | P3 | Query API (8 ops) + HTTP server + context compiler + /ask + report.py eval + 1 fps baseline | agent-api | engine/api.py, engine/server.py, engine/report.py | report run 04:25: G1 G2 G4 PASS; G3 flashes 10/10 but HUD exact-frame fail; G5 8/8 HTTP, LLM 6/10 (fail) → engine fixes |
 | P4 | App: run engine on stop, stage logs, review window region modes + events + Ask box | agent-appint | app/Sources/Review, app/Sources/Pipeline | done 03:53 (build ok; tested w/ fake session) |
 | P5 | Proofs pipeline-G1..G6 | orchestrator | proofs/ | todo |
