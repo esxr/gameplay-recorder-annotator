@@ -120,7 +120,7 @@ final class ToolbarPanel: NSPanel {
             bg.addSubview(d)
         }
 
-        optionsButton.frame = NSRect(x: ToolbarMetrics.optionsCenterX - 36, y: midY - 12, width: 72, height: 24)
+        optionsButton.frame = NSRect(x: ToolbarMetrics.optionsCenterX - 33, y: midY - 12, width: 66, height: 24)
         optionsButton.isBordered = false
         optionsButton.bezelStyle = .regularSquare
         optionsButton.attributedTitle = NSAttributedString(string: "Options", attributes: [
@@ -128,6 +128,7 @@ final class ToolbarPanel: NSPanel {
         optionsButton.image = NSImage(systemSymbolName: "chevron.down", accessibilityDescription: nil)?
             .withSymbolConfiguration(NSImage.SymbolConfiguration(pointSize: 8, weight: .semibold))
         optionsButton.imagePosition = .imageTrailing
+        optionsButton.imageHugsTitle = true
         optionsButton.contentTintColor = NSColor(white: 1, alpha: 0.66)
         optionsButton.target = self
         optionsButton.action = #selector(optionsClicked(_:))

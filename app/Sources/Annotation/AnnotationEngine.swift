@@ -76,12 +76,24 @@ final class AnnotationEngine: VideoAnnotating, @unchecked Sendable {
     let maxConcurrent: Int
     let sceneThreshold: Double
     let scanFPS: Double
+    let apiMaxEdge: Int
+    let apiQuality: Double
+    private let session: URLSession = {
+        let c = URLSessionConfiguration.ephemeral
+        c.timeoutIntervalForRequest = 120
+        c.timeoutIntervalForResource = 300
+        c.httpMaximumConnectionsPerHost = 6
+        return URLSession(configuration: c)
+    }()
 
     init(model: String? = nil, maxConcurrent: Int = 6, sceneThreshold: Double = 0.18, scanFPS: Double = 4) {
         self.model = model ?? ProcessInfo.processInfo.environment["GR_MODEL"] ?? "claude-haiku-4-5-20251001"
         self.maxConcurrent = maxConcurrent
         self.sceneThreshold = sceneThreshold
         self.scanFPS = scanFPS
+        let env = ProcessInfo.processInfo.environment
+        self.apiMaxEdge = Int(env["GR_API_MAX_PX"] ?? "") ?? 896
+        self.apiQuality = Double(env["GR_API_JPEG_Q"] ?? "") ?? 0.5
     }
 
     // MARK: - API key
@@ -196,8 +208,13 @@ final class AnnotationEngine: VideoAnnotating, @unchecked Sendable {
                     var sum = 0
                     for i in 0..<g.count { sum += abs(Int(g[i]) - Int(p[i])) }
                     let diff = Double(sum) / Double(g.count) / 255.0
-                    if diff > sceneThreshold, !samples.contains(where: { abs($0.t - st) < 0.5 }) {
-                        samples.append(FrameSample(t: st, trigger: "scene_change"))
+                    if diff > sceneThreshold {
+                        if let i = samples.firstIndex(where: { abs($0.t - st) < step / 2 }) {
+                            // Coincides with an existing 1 fps sample: relabel it.
+                            samples[i] = FrameSample(t: samples[i].t, trigger: "scene_change")
+                        } else if !samples.contains(where: { abs($0.t - st) < 0.5 }) {
+                            samples.append(FrameSample(t: st, trigger: "scene_change"))
+                        } else { prev = g; st += step; continue }
                         AppLog.log("annotation_scene_change", ["t_ms": Int(st * 1000), "diff": String(format: "%.3f", diff)])
                     }
                 }
@@ -228,8 +245,10 @@ final class AnnotationEngine: VideoAnnotating, @unchecked Sendable {
             let (cg, _) = try await generator.image(at: CMTime(seconds: s.t, preferredTimescale: 600))
             guard let jpeg = Self.jpegData(cg, quality: 0.7) else { throw AnnotationError.badResponse("jpeg encode failed") }
             try jpeg.write(to: frameURL, options: .atomic)
+            // Smaller copy for the API (upload bandwidth dominates latency).
+            let apiJPEG = Self.jpegData(cg, quality: apiQuality, maxEdge: apiMaxEdge) ?? jpeg
             let ctx = await sink.context(before: s.tMs)
-            let parsed = try await callClaude(jpeg: jpeg, sample: s, context: ctx, apiKey: apiKey)
+            let parsed = try await callClaude(jpeg: apiJPEG, sample: s, context: ctx, apiKey: apiKey)
             let rec = AnnotationRecord(t_ms: s.tMs, frame: s.frameIndex, scene: parsed.scene, entities: parsed.entities,
                                        hud: parsed.hud, text: parsed.text, events: parsed.events, confidence: parsed.confidence,
                                        evidence_frame: frameURL.path, model: model, trigger: s.trigger)
@@ -240,12 +259,11 @@ final class AnnotationEngine: VideoAnnotating, @unchecked Sendable {
         }
     }
 
-    static func jpegData(_ img: CGImage, quality: Double) -> Data? {
-        // Ensure max 1280 px long edge.
+    static func jpegData(_ img: CGImage, quality: Double, maxEdge: Int = 1280) -> Data? {
         var image = img
         let longEdge = max(img.width, img.height)
-        if longEdge > 1280 {
-            let scale = 1280.0 / Double(longEdge)
+        if longEdge > maxEdge {
+            let scale = Double(maxEdge) / Double(longEdge)
             let w = Int(Double(img.width) * scale), h = Int(Double(img.height) * scale)
             if let ctx = CGContext(data: nil, width: w, height: h, bitsPerComponent: 8, bytesPerRow: 0,
                                    space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue) {
@@ -335,7 +353,7 @@ final class AnnotationEngine: VideoAnnotating, @unchecked Sendable {
         let bodyData = try JSONSerialization.data(withJSONObject: body)
         var req = URLRequest(url: URL(string: "https://api.anthropic.com/v1/messages")!)
         req.httpMethod = "POST"
-        req.timeoutInterval = 90
+        req.timeoutInterval = 120
         req.setValue(apiKey, forHTTPHeaderField: "x-api-key")
         req.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
         req.setValue("application/json", forHTTPHeaderField: "content-type")
@@ -344,7 +362,7 @@ final class AnnotationEngine: VideoAnnotating, @unchecked Sendable {
         var attempt = 0
         while true {
             do {
-                let (data, resp) = try await URLSession.shared.data(for: req)
+                let (data, resp) = try await session.data(for: req)
                 let code = (resp as? HTTPURLResponse)?.statusCode ?? 0
                 if code == 200 { return try Self.parseResponse(data) }
                 let msg = String(data: data.prefix(300), encoding: .utf8) ?? ""
