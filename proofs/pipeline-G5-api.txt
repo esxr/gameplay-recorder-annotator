@@ -1,0 +1,33 @@
+$ curl -s 'http://127.0.0.1:8765/get_state?session=/private/tmp/claude-501/-Users-pranav-Desktop-gameplay-recorder-annotator/93f67c4f-ca5c-4a83-aaf2-6fbbe0e6f470/scratchpad/fake.session&f=300'
+HTTP 200  bytes=961
+{"scene": {"label": {"v": "level1", "conf": 0.95, "source": "observed", "f": 0, "bbox": [0, 0, 0.1, 0.1], "crop": null}, "id": "s1"}, "hud": {"health": {"v": 93, "conf": 0.95, "source": "observed", "f": 300, "bbox": [0, 0, 0.1, 0.1], "crop": null}, "ammo": {"v": 28, "conf": 0.95, "source": "observed
+
+$ curl -s 'http://127.0.0.1:8765/get_changes?session=/private/tmp/claude-501/-Users-pranav-Desktop-gameplay-recorder-annotator/93f67c4f-ca5c-4a83-aaf2-6fbbe0e6f470/scratchpad/fake.session&f0=300&f1=330'
+HTTP 200  bytes=6210
+{"f0": 300, "f1": 330, "changes": [{"f": 300, "kind": "snapshot"}, {"f": 301, "delta": {"entities": {"e1": {"visible": {"f": 301}, "bbox": {"v": [0.2505, 0.3, 0.05, 0.09], "f": 301}}}, "text": {"obj": {"f": 301}}, "hud": {"ammo": {"f": 301}, "health": {"source": "propagated", "conf": 0.8}}}}, {"f": 
+
+$ curl -s 'http://127.0.0.1:8765/get_entity_history?session=/private/tmp/claude-501/-Users-pranav-Desktop-gameplay-recorder-annotator/93f67c4f-ca5c-4a83-aaf2-6fbbe0e6f470/scratchpad/fake.session&entity_id=e1'
+HTTP 200  bytes=3259
+{"entity_id": "e1", "first_f": 0, "last_f": 599, "history": {"type": [{"f": 0, "v": "enemy", "conf": 0.95, "source": "observed", "f_obs": 0, "bbox": [0, 0, 0.1, 0.1], "crop": null}], "label": [{"f": 0, "v": "red enemy", "conf": 0.95, "source": "observed", "f_obs": 0, "bbox": [0, 0, 0.1, 0.1], "crop"
+
+$ curl -s 'http://127.0.0.1:8765/get_events?session=/private/tmp/claude-501/-Users-pranav-Desktop-gameplay-recorder-annotator/93f67c4f-ca5c-4a83-aaf2-6fbbe0e6f470/scratchpad/fake.session&f0=0&f1=600&type=flash'
+HTTP 200  bytes=440
+{"count": 2, "events": [{"id": "fl150", "type": "flash", "f_start": 150, "f_end": 150, "t_ms": 5000.0, "confidence": 0.9, "source": "observed", "evidence": {"f": 150, "bbox": [0, 0, 1, 1], "crop": "evidence/f150_flash.jpg"}}, {"id": "fl320", "type": "flash", "f_start": 320, "f_end": 320, "t_ms": 106
+
+$ curl -s 'http://127.0.0.1:8765/search_semantics?session=/private/tmp/claude-501/-Users-pranav-Desktop-gameplay-recorder-annotator/93f67c4f-ca5c-4a83-aaf2-6fbbe0e6f470/scratchpad/fake.session&query=objective'
+HTTP 200  bytes=46
+{"query": "objective", "count": 0, "hits": []}
+
+$ curl -s 'http://127.0.0.1:8765/get_evidence?session=/private/tmp/claude-501/-Users-pranav-Desktop-gameplay-recorder-annotator/93f67c4f-ca5c-4a83-aaf2-6fbbe0e6f470/scratchpad/fake.session&annotation_id=ev100a'
+HTTP 200  bytes=418
+{"id": "ev100a", "claim": "f100 t=3.33s ui_value_changed entity=hud.ammo 30->29 [obs 0.90] id=ev100a", "evidence": {"f": 100, "bbox": [0, 0.9, 0.1, 0.1], "crop": "evidence/f100_ammo.jpg", "crop_abs": "/private/tmp/claude-501/-Users-pranav-Desktop-gameplay-recorder-annotator/93f67c4f-ca5c-4a83-aaf2-6
+
+$ curl -s 'http://127.0.0.1:8765/compile_context?session=/private/tmp/claude-501/-Users-pranav-Desktop-gameplay-recorder-annotator/93f67c4f-ca5c-4a83-aaf2-6fbbe0e6f470/scratchpad/fake.session&query=how%20many%20flashes%20and%20when%20did%20health%20drop&token_budget=4000'
+HTTP 200  bytes=2104
+{"context": "## HEADER\nSESSION fake.session: frames 0..599 at 30 fps (frame f -> time f/30 s). Frame indices are source video frames.\nTags: obs=observed this frame by perception; PROP=propagated from earlier observation (not re-seen; conf decays); INFER=inferred. Number after tag = confidence.\n##
+
+$ curl -s 'http://127.0.0.1:8765/reanalyze?session=/private/tmp/claude-501/-Users-pranav-Desktop-gameplay-recorder-annotator/93f67c4f-ca5c-4a83-aaf2-6fbbe0e6f470/scratchpad/fake.session&f0=300&f1=302&region=0.3,0.0,0.4,0.12&fidelity=high'
+HTTP 200  bytes=55
+{"error": "source video not found", "observations": []}
+
+8/8 ops HTTP 200 non-empty

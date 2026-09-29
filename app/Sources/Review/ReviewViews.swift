@@ -18,11 +18,17 @@ struct ReviewRootView: View {
                     .frame(width: 340)
             }
             Divider()
-            TimelineBar(model: model)
-                .frame(height: 64)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .background(Color(nsColor: .windowBackgroundColor))
+            VStack(spacing: 4) {
+                TimelineBar(model: model)
+                    .frame(height: 64)
+                if model.engine.hasSession {
+                    EventsLane(model: model, engine: model.engine)
+                        .frame(height: 30)
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(Color(nsColor: .windowBackgroundColor))
         }
         .background(Color.black)
     }
@@ -51,6 +57,7 @@ struct VideoPane: View {
     var body: some View {
         ZStack(alignment: .topLeading) {
             PlayerViewRep(player: model.player)
+            RegionOverlay(model: model, engine: model.engine)
             GeometryReader { geo in
                 if model.showBoxes, let rec = model.selectedRecord {
                     let fit = AVMakeRect(aspectRatio: model.videoSize, insideRect: CGRect(origin: .zero, size: geo.size))
@@ -89,6 +96,13 @@ struct VideoPane: View {
             .padding(8)
             .background(RoundedRectangle(cornerRadius: 6).fill(Color.black.opacity(0.45)))
             .padding(10)
+
+            VStack {
+                Spacer()
+                RegionLegend(model: model, engine: model.engine)
+                    .padding(.bottom, 60)
+            }
+            .frame(maxWidth: .infinity)
         }
     }
 
@@ -133,8 +147,11 @@ struct AnnotationSidebar: View {
             }
             if model.showList {
                 Divider()
-                RecordList(model: model).frame(height: 230)
+                RecordList(model: model).frame(height: model.engine.hasSession ? 120 : 230)
             }
+            Divider()
+            AskPanel(model: model, engine: model.engine)
+                .frame(height: model.engine.hasSession ? 300 : 170)
         }
         .background(Color(nsColor: .controlBackgroundColor))
     }

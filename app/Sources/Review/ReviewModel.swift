@@ -9,6 +9,7 @@ final class ReviewModel: ObservableObject {
     let videoURL: URL
     let annotationsURL: URL
     let player: AVPlayer
+    let engine: EngineSessionModel
 
     @Published private(set) var records: [AnnotationRecord] = []
     @Published private(set) var jsonlLineCount: Int = 0
@@ -27,12 +28,16 @@ final class ReviewModel: ObservableObject {
     private var lastFileSize: Int = -1
     private var lastModDate: Date?
     private var unchangedReloads = 0
+    private var engineSub: AnyCancellable?
 
     init(video: URL, annotations: URL) {
         videoURL = video
         annotationsURL = annotations
         player = AVPlayer(url: video)
+        engine = EngineSessionModel(video: video)
         player.actionAtItemEnd = .pause
+        engineSub = engine.$hasSession.removeDuplicates().sink { [weak self] _ in self?.objectWillChange.send() }
+        engine.onSeekFrame = { [weak self] f in guard let self else { return }; self.seek(toMs: self.engine.ms(forFrame: f)) }
         loadAssetInfo()
         reload()
         start()
@@ -73,6 +78,7 @@ final class ReviewModel: ObservableObject {
         reloadTimer?.invalidate(); reloadTimer = nil
         if let o = timeObserver { player.removeTimeObserver(o); timeObserver = nil }
         player.pause()
+        engine.stop()
     }
 
     private func loadAssetInfo() {

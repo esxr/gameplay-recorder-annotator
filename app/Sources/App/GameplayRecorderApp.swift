@@ -151,6 +151,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func annotateThenReview(_ video: URL) {
         let jsonl = AppPaths.annotationsURL(for: video)
         statusItem.button?.title = " Annotating…"
+        // Semantic video state engine (engine/run.py) runs alongside the 1 fps Claude annotation; logs engine_stage lines.
+        EngineRunner.shared.run(video: video)
         // Open the review immediately; it polls the growing JSONL.
         Task.detached { [annotator] in
             do {

@@ -1,0 +1,3 @@
+== G5: query API over HTTP + LLM answers via compile_context ==
+HTTP ops: 8/8 returned 200 + non-empty  -> proofs/pipeline-G5-api.txt  (PASS)
+questions file missing -> skip LLM eval

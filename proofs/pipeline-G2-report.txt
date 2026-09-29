@@ -1,0 +1,23 @@
+== G2: snapshot+delta reconstruction; storage; identity ==
+  f=    39 get_state==dense_replay: OK
+  f=    50 get_state==dense_replay: OK
+  f=    60 get_state==dense_replay: OK
+  f=    72 get_state==dense_replay: OK
+  f=    75 get_state==dense_replay: OK
+  f=    89 get_state==dense_replay: OK
+  f=    93 get_state==dense_replay: OK
+  f=    97 get_state==dense_replay: OK
+  f=   155 get_state==dense_replay: OK
+  f=   220 get_state==dense_replay: OK
+  f=   247 get_state==dense_replay: OK
+  f=   333 get_state==dense_replay: OK
+  f=   376 get_state==dense_replay: OK
+  f=   406 get_state==dense_replay: OK
+  f=   430 get_state==dense_replay: OK
+  f=   446 get_state==dense_replay: OK
+  f=   521 get_state==dense_replay: OK
+  f=   550 get_state==dense_replay: OK
+  f=   566 get_state==dense_replay: OK
+  f=   598 get_state==dense_replay: OK
+reconstruct (api fallback replay) vs sequential dense replay: 20/20 (non-snapshot frames)  PASS
+stored bytes (stream+events+summary)=194921  dense per-frame JSON bytes=655154  ratio=3.4x  (>=10x: FAIL)
