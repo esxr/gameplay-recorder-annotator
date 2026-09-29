@@ -1,32 +1,32 @@
-$ curl -s 'http://127.0.0.1:8765/get_state?session=/private/tmp/claude-501/-Users-pranav-Desktop-gameplay-recorder-annotator/93f67c4f-ca5c-4a83-aaf2-6fbbe0e6f470/scratchpad/g5&f=2290'
-HTTP 200  bytes=4509
-{"scene": {"label": {"v": "Gate approach gameplay", "conf": 0.8, "source": "inferred", "f": 0, "bbox": [0.0, 0.0, 1.0, 1.0], "crop": "evidence/f0_scene.jpg"}, "id": "s1"}, "entities": {"e4": {"type": {"v": "ui", "conf": 0.8, "source": "inferred", "f": 255, "bbox": [0.0437, 0.0532, 0.1125, 0.0213], "
+$ curl -s 'http://127.0.0.1:8765/get_state?session=/private/tmp/claude-501/-Users-pranav-Desktop-gameplay-recorder-annotator/93f67c4f-ca5c-4a83-aaf2-6fbbe0e6f470/scratchpad/g6&f=2290'
+HTTP 200  bytes=4479
+{"scene": {"label": {"v": "unknown", "conf": 0.5, "source": "inferred", "f": 0, "bbox": [0.0, 0.0, 1.0, 1.0], "crop": "evidence/f0_scene.jpg"}, "id": "s1"}, "entities": {"e3": {"type": {"v": "object", "conf": 0.4, "source": "inferred", "f": 214, "bbox": [0.3187, 0.3191, 0.05, 0.0851], "crop": "evide
 
-$ curl -s 'http://127.0.0.1:8765/get_changes?session=/private/tmp/claude-501/-Users-pranav-Desktop-gameplay-recorder-annotator/93f67c4f-ca5c-4a83-aaf2-6fbbe0e6f470/scratchpad/g5&f0=2290&f1=2320'
-HTTP 200  bytes=4284
-{"f0": 2290, "f1": 2320, "changes": [{"f": 2290, "delta": {"entities": {"e19": {"bbox": {"v": [0.744, 0.553, 0.056, 0.085]}}, "e23": {"bbox": {"v": [0.562, 0.383, 0.056, 0.085]}}}}}, {"f": 2291, "delta": {"entities": {"e23": {"bbox": {"v": [0.569, 0.383, 0.05, 0.085], "conf": 0.81}}}}}, {"f": 2292, 
+$ curl -s 'http://127.0.0.1:8765/get_changes?session=/private/tmp/claude-501/-Users-pranav-Desktop-gameplay-recorder-annotator/93f67c4f-ca5c-4a83-aaf2-6fbbe0e6f470/scratchpad/g6&f0=2290&f1=2320'
+HTTP 200  bytes=3986
+{"f0": 2290, "f1": 2320, "changes": [{"f": 2290, "delta": {"entities": {"e11": {"bbox": {"v": [0.562, 0.383, 0.056, 0.085]}}}}}, {"f": 2291, "delta": {"entities": {"e11": {"bbox": {"v": [0.569, 0.383, 0.05, 0.085], "conf": 0.81}}}}}, {"f": 2293, "delta": {"entities": {"e11": {"bbox": {"v": [0.575, 0
 
-$ curl -s 'http://127.0.0.1:8765/get_entity_history?session=/private/tmp/claude-501/-Users-pranav-Desktop-gameplay-recorder-annotator/93f67c4f-ca5c-4a83-aaf2-6fbbe0e6f470/scratchpad/g5&entity_id=e1'
-HTTP 200  bytes=4641
-{"entity_id": "e1", "first_f": 3, "last_f": 624, "history": {"type": [{"f": 3, "v": "object", "conf": 0.4, "source": "inferred", "f_obs": 1, "bbox": [0.2, 0.5851, 0.0563, 0.0851], "crop": "evidence/f3_e1.jpg"}, {"f": 133, "v": "other", "conf": 0.8, "source": "inferred", "f_obs": 102, "bbox": [0.2062
+$ curl -s 'http://127.0.0.1:8765/get_entity_history?session=/private/tmp/claude-501/-Users-pranav-Desktop-gameplay-recorder-annotator/93f67c4f-ca5c-4a83-aaf2-6fbbe0e6f470/scratchpad/g6&entity_id=e1'
+HTTP 200  bytes=3702
+{"entity_id": "e1", "first_f": 221, "last_f": 678, "history": {"type": [{"f": 221, "v": "object", "conf": 0.4, "source": "inferred", "f_obs": 213, "bbox": [0.7312, 0.5745, 0.05, 0.0957], "crop": "evidence/f221_e1.jpg"}], "label": [{"f": 221, "v": "moving object", "conf": 0.4, "source": "inferred", "
 
-$ curl -s 'http://127.0.0.1:8765/get_events?session=/private/tmp/claude-501/-Users-pranav-Desktop-gameplay-recorder-annotator/93f67c4f-ca5c-4a83-aaf2-6fbbe0e6f470/scratchpad/g5&f0=0&f1=4580&type=flash'
-HTTP 200  bytes=2650
-{"count": 10, "events": [{"id": "ev17", "type": "flash", "f_start": 521, "f_end": 521, "t_ms": 8683.33, "duration_frames": 1, "color": [165, 169, 177], "confidence": 0.9, "source": "observed", "evidence": {"f": 521, "bbox": [0.0, 0.0, 1.0, 1.0], "crop": "evidence/f521_flash.jpg"}}, {"id": "ev30", "t
+$ curl -s 'http://127.0.0.1:8765/get_events?session=/private/tmp/claude-501/-Users-pranav-Desktop-gameplay-recorder-annotator/93f67c4f-ca5c-4a83-aaf2-6fbbe0e6f470/scratchpad/g6&f0=0&f1=4580&type=flash'
+HTTP 200  bytes=2648
+{"count": 10, "events": [{"id": "ev10", "type": "flash", "f_start": 521, "f_end": 521, "t_ms": 8683.33, "duration_frames": 1, "color": [165, 169, 177], "confidence": 0.9, "source": "observed", "evidence": {"f": 521, "bbox": [0.0, 0.0, 1.0, 1.0], "crop": "evidence/f521_flash.jpg"}}, {"id": "ev18", "t
 
-$ curl -s 'http://127.0.0.1:8765/search_semantics?session=/private/tmp/claude-501/-Users-pranav-Desktop-gameplay-recorder-annotator/93f67c4f-ca5c-4a83-aaf2-6fbbe0e6f470/scratchpad/g5&query=objective'
+$ curl -s 'http://127.0.0.1:8765/search_semantics?session=/private/tmp/claude-501/-Users-pranav-Desktop-gameplay-recorder-annotator/93f67c4f-ca5c-4a83-aaf2-6fbbe0e6f470/scratchpad/g6&query=objective'
 HTTP 200  bytes=46
 {"query": "objective", "count": 0, "hits": []}
 
-$ curl -s 'http://127.0.0.1:8765/get_evidence?session=/private/tmp/claude-501/-Users-pranav-Desktop-gameplay-recorder-annotator/93f67c4f-ca5c-4a83-aaf2-6fbbe0e6f470/scratchpad/g5&annotation_id=ev1'
-HTTP 200  bytes=389
-{"id": "ev1", "claim": "f1-f3 t=0.02s entity_created entity=e1 [obs 0.80] id=ev1", "evidence": {"f": 3, "bbox": [0.2, 0.5851, 0.0563, 0.0851], "crop": "evidence/f3_e1.jpg", "crop_abs": "/private/tmp/claude-501/-Users-pranav-Desktop-gameplay-recorder-annotator/93f67c4f-ca5c-4a83-aaf2-6fbbe0e6f470/scr
+$ curl -s 'http://127.0.0.1:8765/get_evidence?session=/private/tmp/claude-501/-Users-pranav-Desktop-gameplay-recorder-annotator/93f67c4f-ca5c-4a83-aaf2-6fbbe0e6f470/scratchpad/g6&annotation_id=ev1'
+HTTP 200  bytes=400
+{"id": "ev1", "claim": "f213-f221 t=3.55s entity_created entity=e1 [obs 0.80] id=ev1", "evidence": {"f": 221, "bbox": [0.7312, 0.5745, 0.05, 0.0957], "crop": "evidence/f221_e1.jpg", "crop_abs": "/private/tmp/claude-501/-Users-pranav-Desktop-gameplay-recorder-annotator/93f67c4f-ca5c-4a83-aaf2-6fbbe0e
 
-$ curl -s 'http://127.0.0.1:8765/compile_context?session=/private/tmp/claude-501/-Users-pranav-Desktop-gameplay-recorder-annotator/93f67c4f-ca5c-4a83-aaf2-6fbbe0e6f470/scratchpad/g5&query=how%20many%20flashes%20and%20when%20did%20health%20drop&token_budget=4000'
-HTTP 200  bytes=15565
-{"context": "## HEADER\nSESSION g5: frames 0..4579 at 60 fps (frame f -> time f/60 s). Frame indices are source video frames.\nTags: obs=observed this frame by perception; PROP=propagated from earlier observation (not re-seen; conf decays); INFER=inferred. Number after tag = confidence.\n## HUD VALU
+$ curl -s 'http://127.0.0.1:8765/compile_context?session=/private/tmp/claude-501/-Users-pranav-Desktop-gameplay-recorder-annotator/93f67c4f-ca5c-4a83-aaf2-6fbbe0e6f470/scratchpad/g6&query=how%20many%20flashes%20and%20when%20did%20health%20drop&token_budget=4000'
+HTTP 200  bytes=15615
+{"context": "## HEADER\nSESSION g6: frames 0..4579 at 60 fps (frame f -> time f/60 s). Frame indices are source video frames.\nTags: obs=observed this frame by perception; PROP=propagated from earlier observation (not re-seen; conf decays); INFER=inferred. Number after tag = confidence.\n## HUD VALU
 
-$ curl -s 'http://127.0.0.1:8765/reanalyze?session=/private/tmp/claude-501/-Users-pranav-Desktop-gameplay-recorder-annotator/93f67c4f-ca5c-4a83-aaf2-6fbbe0e6f470/scratchpad/g5&f0=2290&f1=2292&region=0.3,0.0,0.4,0.12&fidelity=high'
+$ curl -s 'http://127.0.0.1:8765/reanalyze?session=/private/tmp/claude-501/-Users-pranav-Desktop-gameplay-recorder-annotator/93f67c4f-ca5c-4a83-aaf2-6fbbe0e6f470/scratchpad/g6&f0=2290&f1=2292&region=0.3,0.0,0.4,0.12&fidelity=high'
 HTTP 200  bytes=701
 {"f0": 2290, "f1": 2292, "region": "0.3,0.0,0.4,0.12", "fidelity": "high", "observations": [{"f": 2290, "text": {"v": "Reach the agate", "conf": 0.9, "source": "observed", "f": 2290, "bbox": [0.3, 0.0, 0.4, 0.1196808510638298], "crop": null}, "fidelity": "high", "method": "tesseract_fullres"}, {"f":
 

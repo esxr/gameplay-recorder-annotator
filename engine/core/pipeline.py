@@ -32,7 +32,9 @@ FG_T = 60                    # foreground colour distance to background model
 DECAY_C = 0.998              # per-frame confidence decay of unchanged region state
 DECAY_P = 0.995              # per-frame decay of propagated fields
 CONF_REINFER = 0.55
-HIDE_FRAMES_S = 2.0
+HIDE_FRAMES_S = 3.0          # lost-track window (occlusion) before entity_removed
+CONFIRM_MOVE = 0.012         # a blob must travel this far (normalized) before it becomes an entity
+REID_COLOR = 60.0            # max mean-colour distance (sum |dRGB|) for re-identification
 SNAP_EVERY = 300
 EMIT_MOVE = 0.006             # min normalized bbox move before a propagated bbox is re-emitted
 
@@ -91,6 +93,8 @@ class Track:
         self.hidden_since = None
         self.moved = 0.0
         self._vlm = False
+        self.sig = None
+        self.origin = self.bbox[:2] + self.bbox[2:] / 2
         self.anchor_bb = [float(v) for v in bbox]
 
 
@@ -312,6 +316,31 @@ class Engine:
                                **{"from": old["v"], "to": txt})
                 self.state["text"][name] = field(txt, 0.85, "observed", f, nb, crop)
 
+    def reidentify(self, cand, f):
+        """Match a newly confirmed blob to a recently lost track (≤ lost window) by colour signature + size."""
+        best, bs = None, 1e9
+        for t in self.tracks.values():
+            if t.last_seen >= f - 1 or t.sig is None or cand.sig is None:
+                continue
+            cd = float(np.abs(t.sig - cand.sig).sum())
+            ra = (cand.bbox[2] * cand.bbox[3]) / max(1e-6, t.bbox[2] * t.bbox[3])
+            dd = float(np.hypot(*((t.bbox[:2] + t.bbox[2:] / 2) - (cand.bbox[:2] + cand.bbox[2:] / 2))))
+            if cd < REID_COLOR and 0.5 < ra < 2.0 and dd < 0.5:
+                sc = cd / REID_COLOR + dd
+                if sc < bs:
+                    best, bs = t, sc
+        if best is None:
+            return None
+        best.bbox = cand.bbox.copy()
+        best.vel = cand.vel.copy()
+        best.last_seen = f
+        best.hidden_since = None
+        best.anchor_f, best.anchor_conf = f, 0.9
+        best.crop = self.crop_save(self.cur_frame, best.bbox, f, best.id)
+        best.anchor_bb = [float(v) for v in best.bbox]
+        best.sig = 0.5 * best.sig + 0.5 * cand.sig
+        return best
+
     def bbox_field(self, t, f, bb, conf, src):
         """Re-emit an entity's bbox field only when it moved > EMIT_MOVE (or provenance changed) → small deltas."""
         last = getattr(t, "_emit", None)
@@ -424,6 +453,7 @@ class Engine:
         while buf:
             f += 1
             frame, sm = buf[0]
+            self.cur_frame = frame
             look = [b[1] for b in list(buf)[1:3]]
             H, W = frame.shape[:2]
             # ---------------------------------------------------------- change
@@ -468,6 +498,9 @@ class Engine:
             new_cells = set()
             if is_F:
                 bg = sm.astype(np.float32)
+                self.toggle = np.zeros(sm.shape[:2], np.float32)
+                self.fg_prev = np.zeros(sm.shape[:2], bool)
+                self.ui_mask = np.zeros(sm.shape[:2], bool)
                 med = vid.sample_median(self.video, f / self.fps, 10.0, W, H, sub=SUB)
                 if med is not None and med.shape == bg.shape:
                     bg = med
@@ -478,10 +511,20 @@ class Engine:
                 for nb in list(self.hud_boxes.values()) + list(self.text_boxes.values()):
                     x0, y0, x1, y1 = self.box_px(nb, hh, ww)
                     fg[y0:y1 + 1, x0:x1 + 1] = False
+                # UI flicker: pixels whose foreground state toggles often in place (counters, blinking icons)
+                self.toggle += 0.03 * ((fg != self.fg_prev).astype(np.float32) - self.toggle)
+                self.fg_prev = fg.copy()
+                self.ui_mask |= self.toggle > 0.12
+                fg &= ~self.ui_mask
                 bl = blobs(fg)
                 hh, ww = fg.shape
-                dets = [np.array([b[0] / ww, b[1] / hh, (b[2] - b[0]) / ww, (b[3] - b[1]) / hh]) for b in bl
-                        if (b[2] - b[0]) < 0.5 * ww and (b[3] - b[1]) < 0.5 * hh]
+                bl = [b for b in bl if (b[2] - b[0]) < 0.5 * ww and (b[3] - b[1]) < 0.5 * hh]
+                dets = [np.array([b[0] / ww, b[1] / hh, (b[2] - b[0]) / ww, (b[3] - b[1]) / hh]) for b in bl]
+                sigs = []
+                for b in bl:
+                    m = fg[b[1]:b[3], b[0]:b[2]]
+                    px = sm[b[1]:b[3], b[0]:b[2]][m]
+                    sigs.append(px.mean(0) if len(px) else np.zeros(3))
                 # update background: fast where background, slow where foreground
                 a = np.where(fg, 0.004, 0.15)[..., None].astype(np.float32)
                 bg += a * (sm - bg)
@@ -510,6 +553,7 @@ class Engine:
                     t.moved += float(np.hypot(*(nc - oc)))
                     old = t.bbox.copy()
                     t.bbox = d
+                    t.sig = sigs[di] if t.sig is None else 0.8 * t.sig + 0.2 * sigs[di]
                     t.last_seen = f
                     t.hits += 1
                     if t.confirmed:
@@ -523,12 +567,23 @@ class Engine:
                 for di, d in enumerate(dets):
                     if di not in used_d:
                         t = Track(None, d, f)
+                        t.sig = sigs[di]
                         self.tent.append(t)
                         new_cells.update(cells_of(d))
                 # tentative → confirmed
                 still = []
                 for t in self.tent:
-                    if t.last_seen == f and t.hits >= 3:
+                    disp = float(np.hypot(*(t.bbox[:2] + t.bbox[2:] / 2 - t.origin)))
+                    if t.last_seen == f and f - t.first > self.fps and disp < 2 * CONFIRM_MOVE:
+                        # static in place for > 1 s → UI / scenery, not an entity
+                        x0, y0, x1, y1 = self.box_px(t.bbox, hh, ww)
+                        self.ui_mask[y0:y1 + 1, x0:x1 + 1] = True
+                        continue
+                    if t.last_seen == f and t.hits >= 3 and disp >= CONFIRM_MOVE:
+                        rt = self.reidentify(t, f)
+                        if rt is not None:
+                            new_cells.update(cells_of(t.bbox))
+                            continue
                         t.id = f"e{self.next_tid}"; self.next_tid += 1
                         t.confirmed = True
                         t.anchor_f, t.anchor_conf = f, 0.9

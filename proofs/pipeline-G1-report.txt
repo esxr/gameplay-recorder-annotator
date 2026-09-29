@@ -1,8 +1,8 @@
 == G1: every frame on timeline; region modes; VLM sparsity ==
 stream.jsonl lines=4580  ffprobe nb_frames=4580  match=PASS
 frame indices contiguous 0..4579: PASS
-mode histogram (region-frames): COPY=209050 (95.1%)  PROPAGATE=4744 (2.2%)  REVALIDATE=5064 (2.3%)  RE-INFER=790 (0.4%)  FULL_REFRESH=192 (0.1%)
+mode histogram (region-frames): COPY=209055 (95.1%)  PROPAGATE=4236 (1.9%)  REVALIDATE=5568 (2.5%)  RE-INFER=789 (0.4%)  FULL_REFRESH=192 (0.1%)
 all 5 modes > 0: PASS   rows with modes!=48 chars: 0
 COPY+PROPAGATE+REVALIDATE = 99.55%  (>=70%: PASS)
-VLM frames = 24/4580 = 0.52%  (<=5%: PASS)
-snapshots=19 deltas=4561 empty deltas=1321
+VLM frames = 0/4580 = 0.00%  (<=5%: PASS)
+snapshots=19 deltas=4561 empty deltas=1683
