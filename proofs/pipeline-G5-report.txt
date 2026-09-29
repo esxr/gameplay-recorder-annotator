@@ -1,3 +1,37 @@
 == G5: query API over HTTP + LLM answers via compile_context ==
 HTTP ops: 8/8 returned 200 + non-empty  -> proofs/pipeline-G5-api.txt  (PASS)
-questions file missing -> skip LLM eval
+questions: engine/questions/testgame.json created_at=2026-09-30T04:02:58+10:00 (file mtime 2026-09-30T04:02:58); eval started 2026-09-30T04:09:47
+  [q1] WRONG ctx_tokens=4003 in_tokens=7791
+      Q: Exactly which video frame first shows four enemies visible on screen at the same time?
+      expected: 1704   got: 217
+  [q2] CORRECT ctx_tokens=4005 in_tokens=7791
+      Q: How many enemies were visible in the frame just before the ammo value first decreased?
+      expected: 3   got: 3
+  [q3] WRONG ctx_tokens=2913 in_tokens=5313
+      Q: How much health was lost between the first shot (first ammo decrease) and the fourth shot (fourth ammo decrease)?
+      expected: 7   got: 14
+  [q4] CORRECT ctx_tokens=2876 in_tokens=5251
+      Q: Did the ammo value first decrease before or after the first screen flash? Answer 'before' or 'after'.
+      expected: before   got: before
+  [q5] CORRECT ctx_tokens=3999 in_tokens=7761
+      Q: What did the objective text change from and to?
+      expected: ['Reach the gate', 'Defend the core']   got: From "Reach the gate" to "Defend the core"
+  [q6] CORRECT ctx_tokens=2794 in_tokens=5092
+      Q: At which video frame did the first flash that lasted exactly one frame occur?
+      expected: 521   got: 521
+  [q7] CORRECT ctx_tokens=3999 in_tokens=7832
+      Q: Around frame 534 an enemy disappears behind the grey cover pillar (visible enemy count drops). Was it seen again, and at which frame did it first reappear? Answer with the reappearance frame.
+      expected: 565   got: 566
+  [q8] WRONG ctx_tokens=4011 in_tokens=7872
+      Q: What was the score shown at video frame 2400 (t = 40.00 s)?
+      expected: 850   got: 800
+  [q9] CORRECT ctx_tokens=4004 in_tokens=7801
+      Q: How many separate screen flashes occurred in the whole video?
+      expected: 10   got: 10
+  [q10] WRONG ctx_tokens=3999 in_tokens=7810
+      Q: How many enemies were visible at video frame 1200 (t = 20.00 s)?
+      expected: 3   got: 6
+score 6/10  (>=8: FAIL)  model=claude-haiku-4-5-20251001
+context tokens per question: [4003, 4005, 2913, 2876, 3999, 2794, 3999, 4011, 4004, 3999]  max=4011 (<=4000: FAIL) mean=3660
+all-frames baseline: 4580 frames x ~1000 image tokens = 4580000 tokens; dense per-frame JSON = 6084733 tokens
+ratio max-context / image baseline = 0.088%  / dense JSON = 0.07%  (<=10%: PASS)

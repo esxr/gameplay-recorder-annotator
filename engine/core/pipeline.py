@@ -156,6 +156,7 @@ class Engine:
         from concurrent.futures import ThreadPoolExecutor
         self.ocr_pool = ThreadPoolExecutor(max_workers=6)
         self.fullrefresh_ocr = 0
+        self.vlm_wait_left = 45.0     # total seconds the pipeline may block on VLM results (slow uplink)
 
     # ------------------------------------------------------------------ helpers
     def crop_save(self, frame, bbox, f, name, pad=0.01):
@@ -324,7 +325,7 @@ class Engine:
     def vlm_budget_ok(self, f):
         if not self.vlm:
             return False
-        cap = min(int(0.05 * self.nb) - 1, 40)
+        cap = min(int(0.05 * self.nb) - 1, 24)
         return self.vlm_frames < cap and self.vlm_frames <= 0.05 * (f + 1) + 2
 
     def poll_vlm(self, f, wait=False):
@@ -332,13 +333,21 @@ class Engine:
         for fut, kind, payload in self.pending:
             sf = payload[0] if kind == "scene" else payload[1]
             # bounded latency: block on results older than 30 frames so labels land in the stream
-            if not (wait or fut.done() or f - sf > 30):
+            block = (wait or f - sf > 30) and self.vlm_wait_left > 0
+            if not (fut.done() or block):
                 keep.append((fut, kind, payload))
                 continue
+            tw = time.time()
             try:
-                res = fut.result(timeout=60 if (wait or f - sf > 30) else 0)
+                res = fut.result(timeout=min(20.0, self.vlm_wait_left) if not fut.done() else 0)
             except Exception:
+                if not fut.done():
+                    keep.append((fut, kind, payload))
+                    self.vlm_wait_left -= time.time() - tw
                 continue
+            finally:
+                if block:
+                    self.vlm_wait_left -= time.time() - tw
             if not isinstance(res, dict) or "error" in res:
                 continue
             if kind == "scene":

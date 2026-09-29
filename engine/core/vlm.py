@@ -37,7 +37,7 @@ def jpeg_bytes(arr, max_side=512, q=60):
 
 
 class VLM:
-    def __init__(self, key, workers=4, timeout=45):
+    def __init__(self, key, workers=4, timeout=25):
         self.key = key
         self.pool = ThreadPoolExecutor(max_workers=workers)
         self.timeout = timeout
