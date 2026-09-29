@@ -4,5 +4,5 @@ frame indices contiguous 0..4579: PASS
 mode histogram (region-frames): COPY=209050 (95.1%)  PROPAGATE=4744 (2.2%)  REVALIDATE=5064 (2.3%)  RE-INFER=790 (0.4%)  FULL_REFRESH=192 (0.1%)
 all 5 modes > 0: PASS   rows with modes!=48 chars: 0
 COPY+PROPAGATE+REVALIDATE = 99.55%  (>=70%: PASS)
-VLM frames = 40/4580 = 0.87%  (<=5%: PASS)
-snapshots=19 deltas=4561 empty deltas=1323
+VLM frames = 24/4580 = 0.52%  (<=5%: PASS)
+snapshots=19 deltas=4561 empty deltas=1321

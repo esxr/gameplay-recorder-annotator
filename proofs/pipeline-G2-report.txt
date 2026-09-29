@@ -20,6 +20,6 @@
   f=  4407 get_state==dense_replay: OK
   f=  4533 get_state==dense_replay: OK
 reconstruct (engine.core.replay.reconstruct) vs sequential dense replay: 20/20 (non-snapshot frames)  PASS
-stored bytes (stream+events+summary)=1173559  dense per-frame JSON bytes=21400796  ratio=18.2x  (>=10x: PASS)
+stored bytes (stream+events+summary)=1184365  dense per-frame JSON bytes=21425124  ratio=18.1x  (>=10x: PASS)
 truth->video bbox transform: canvas y offset 32px of 752, scale 1.000
 identity: truth-enemy frame instances=12977 matched(IoU>=0.3)=11707 (90.2%) switches=38 = 0.32% of matches  (<=5%: PASS)

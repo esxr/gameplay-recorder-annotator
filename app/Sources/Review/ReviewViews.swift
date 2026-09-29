@@ -58,29 +58,7 @@ struct VideoPane: View {
         ZStack(alignment: .topLeading) {
             PlayerViewRep(player: model.player)
             RegionOverlay(model: model, engine: model.engine)
-            GeometryReader { geo in
-                if model.showBoxes, let rec = model.selectedRecord {
-                    let fit = AVMakeRect(aspectRatio: model.videoSize, insideRect: CGRect(origin: .zero, size: geo.size))
-                    ForEach(Array(rec.entities.enumerated()), id: \.offset) { _, e in
-                        if let b = e.bbox, b.count == 4 {
-                            let r = CGRect(x: fit.minX + b[0] * fit.width, y: fit.minY + b[1] * fit.height,
-                                           width: b[2] * fit.width, height: b[3] * fit.height)
-                            ZStack(alignment: .topLeading) {
-                                Rectangle().stroke(color(for: e.type), lineWidth: 2)
-                                Text("\(e.label) \(Int(e.confidence * 100))%")
-                                    .font(.system(size: 10, weight: .semibold))
-                                    .padding(.horizontal, 3)
-                                    .background(color(for: e.type).opacity(0.85))
-                                    .foregroundColor(.black)
-                                    .offset(y: -14)
-                            }
-                            .frame(width: max(r.width, 1), height: max(r.height, 1))
-                            .position(x: r.midX, y: r.midY)
-                        }
-                    }
-                }
-            }
-            .allowsHitTesting(false)
+            BoxOverlay(model: model, engine: model.engine)
 
             HStack(spacing: 8) {
                 Toggle("Show boxes", isOn: $model.showBoxes)

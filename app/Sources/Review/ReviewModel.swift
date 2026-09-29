@@ -69,7 +69,7 @@ final class ReviewModel: ObservableObject {
         reloadTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated { self?.reload() }
         }
-        timeObserver = player.addPeriodicTimeObserver(forInterval: CMTime(value: 1, timescale: 20), queue: .main) { [weak self] t in
+        timeObserver = player.addPeriodicTimeObserver(forInterval: CMTime(value: 1, timescale: 60), queue: .main) { [weak self] t in
             MainActor.assumeIsolated { self?.tick(t) }
         }
     }
@@ -93,6 +93,10 @@ final class ReviewModel: ObservableObject {
                 if abs(r.width) > 0, abs(r.height) > 0 {
                     self?.videoSize = CGSize(width: abs(r.width), height: abs(r.height))
                 }
+            }
+            // Automation hook for scripted proofs: GR_SEEK_S=<seconds> positions the playhead once on open.
+            if let s = ProcessInfo.processInfo.environment["GR_SEEK_S"].flatMap(Double.init) {
+                self?.seek(toMs: Int(s * 1000))
             }
         }
     }
@@ -182,5 +186,25 @@ final class ReviewModel: ObservableObject {
 
     func togglePlay() {
         if player.rate != 0 { player.pause() } else { player.play() }
+    }
+
+    /// 1 fps fallback: entity boxes linearly interpolated (by entity id) between the records around `ms`.
+    func interpolatedEntities(atMs ms: Int) -> [AnnotationEntity] {
+        var lo = 0, hi = records.count - 1, ans = -1
+        while lo <= hi { let mid = (lo + hi) / 2; if records[mid].t_ms <= ms { ans = mid; lo = mid + 1 } else { hi = mid - 1 } }
+        guard ans >= 0 else { return records.first?.entities ?? [] }
+        let r0 = records[ans]
+        guard ans + 1 < records.count else { return r0.entities }
+        let r1 = records[ans + 1]
+        let span = Double(r1.t_ms - r0.t_ms)
+        guard span > 0 else { return r0.entities }
+        let a = max(0, min(1, Double(ms - r0.t_ms) / span))
+        let next = Dictionary(r1.entities.map { ($0.id, $0) }, uniquingKeysWith: { x, _ in x })
+        return r0.entities.map { e in
+            guard let b0 = e.bbox, b0.count == 4, let b1 = next[e.id]?.bbox, b1.count == 4 else { return e }
+            var out = e
+            out.bbox = (0..<4).map { b0[$0] + (b1[$0] - b0[$0]) * a }
+            return out
+        }
     }
 }

@@ -17,7 +17,7 @@ HUD health: truth changes in video=10
    state field with provenance frame f == change frame and correct value: 0/10
    state value already correct AT the change frame (get_state(f)): 0/10  (state commit lag: value written after confirmation, field.f carries the observed frame)
 HUD ammo: truth changes in video=31
-   ui_value_changed event at exact frame with correct new value: 19/31 = 61.3%  (>=90%: FAIL)
-   state field with provenance frame f == change frame and correct value: 19/31
+   ui_value_changed event at exact frame with correct new value: 30/31 = 96.8%  (>=90%: PASS)
+   state field with provenance frame f == change frame and correct value: 30/31
    state value already correct AT the change frame (get_state(f)): 0/31  (state commit lag: value written after confirmation, field.f carries the observed frame)
-ui_value_changed events=41  event_started-type (flash) events=10
+ui_value_changed events=72  event_started-type (flash) events=10

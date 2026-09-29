@@ -1,37 +1,37 @@
 == G5: query API over HTTP + LLM answers via compile_context ==
 HTTP ops: 8/8 returned 200 + non-empty  -> proofs/pipeline-G5-api.txt  (PASS)
-questions: engine/questions/testgame.json created_at=2026-09-30T04:02:58+10:00 (file mtime 2026-09-30T04:02:58); eval started 2026-09-30T04:12:37
-  [q1] WRONG ctx_tokens=3846 in_tokens=7357
+questions: engine/questions/testgame.json created_at=2026-09-30T04:02:58+10:00 (file mtime 2026-09-30T04:02:58); eval started 2026-09-30T04:13:33
+  [q1] WRONG ctx_tokens=3850 in_tokens=7519
       Q: Exactly which video frame first shows four enemies visible on screen at the same time?
-      expected: 1704   got: Frame 2445
-  [q2] WRONG ctx_tokens=3844 in_tokens=7353
+      expected: 1704   got: f217
+  [q2] CORRECT ctx_tokens=3850 in_tokens=7514
       Q: How many enemies were visible in the frame just before the ammo value first decreased?
-      expected: 3   got: 1
-  [q3] WRONG ctx_tokens=2913 in_tokens=5313
+      expected: 3   got: 3
+  [q3] WRONG ctx_tokens=3620 in_tokens=6579
       Q: How much health was lost between the first shot (first ammo decrease) and the fourth shot (fourth ammo decrease)?
       expected: 7   got: 14
-  [q4] CORRECT ctx_tokens=2876 in_tokens=5251
+  [q4] CORRECT ctx_tokens=3578 in_tokens=6505
       Q: Did the ammo value first decrease before or after the first screen flash? Answer 'before' or 'after'.
       expected: before   got: before
-  [q5] CORRECT ctx_tokens=3848 in_tokens=7345
+  [q5] CORRECT ctx_tokens=3838 in_tokens=7477
       Q: What did the objective text change from and to?
-      expected: ['Reach the gate', 'Defend the core']   got: From "Reach the gate" to "Defend the core"
-  [q6] CORRECT ctx_tokens=2794 in_tokens=5092
+      expected: ['Reach the gate', 'Defend the core']   got: The objective text changed from "Reach the gate" to "Defend the core"
+  [q6] CORRECT ctx_tokens=3466 in_tokens=6276
       Q: At which video frame did the first flash that lasted exactly one frame occur?
       expected: 521   got: 521
-  [q7] WRONG ctx_tokens=3840 in_tokens=7369
+  [q7] CORRECT ctx_tokens=3841 in_tokens=7552
       Q: Around frame 534 an enemy disappears behind the grey cover pillar (visible enemy count drops). Was it seen again, and at which frame did it first reappear? Answer with the reappearance frame.
-      expected: 565   got: 662
-  [q8] WRONG ctx_tokens=3842 in_tokens=7569
+      expected: 565   got: 566
+  [q8] CORRECT ctx_tokens=3846 in_tokens=7799
       Q: What was the score shown at video frame 2400 (t = 40.00 s)?
-      expected: 850   got: 800
-  [q9] CORRECT ctx_tokens=3840 in_tokens=7351
+      expected: 850   got: 850
+  [q9] CORRECT ctx_tokens=3849 in_tokens=7525
       Q: How many separate screen flashes occurred in the whole video?
       expected: 10   got: 10
-  [q10] WRONG ctx_tokens=3846 in_tokens=7350
+  [q10] WRONG ctx_tokens=3842 in_tokens=7529
       Q: How many enemies were visible at video frame 1200 (t = 20.00 s)?
-      expected: 3   got: 1
-score 4/10  (>=8: FAIL)  model=claude-haiku-4-5-20251001
-context tokens per question: [3846, 3844, 2913, 2876, 3848, 2794, 3840, 3842, 3840, 3846]  max=3848 (<=4000: PASS) mean=3549
-all-frames baseline: 4580 frames x ~1000 image tokens = 4580000 tokens; dense per-frame JSON = 6084733 tokens
+      expected: 3   got: 6
+score 7/10  (>=8: FAIL)  model=claude-haiku-4-5-20251001
+context tokens per question: [3850, 3850, 3620, 3578, 3838, 3466, 3841, 3846, 3849, 3842]  max=3850 (<=4000: PASS) mean=3758
+all-frames baseline: 4580 frames x ~1000 image tokens = 4580000 tokens; dense per-frame JSON = 6121464 tokens
 ratio max-context / image baseline = 0.084%  / dense JSON = 0.06%  (<=10%: PASS)

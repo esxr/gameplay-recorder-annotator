@@ -14,6 +14,16 @@ struct EngineEvent: Identifiable, Hashable {
     let evidenceCrop: String?
 }
 
+struct EngineBox: Hashable {
+    let id: String
+    let label: String
+    let type: String
+    let bbox: [Double]      // normalized x,y,w,h of the analyzed (full) video frame
+    let visible: Bool
+    let source: String      // observed | propagated | inferred
+    let conf: Double
+}
+
 struct AskEvidence: Identifiable, Hashable {
     var id: String { "\(f)|\(crop ?? "")" }
     let f: Int
@@ -24,7 +34,10 @@ struct AskEvidence: Identifiable, Hashable {
 /// Files are (re)parsed in the background whenever their mtime changes (engine may still be running).
 @MainActor
 final class EngineSessionModel: ObservableObject {
-    let sessionDir: URL
+    private(set) var sessionDir: URL
+    private let sessionCandidates: [URL]
+    /// Per-frame engine boxes (replayed from snapshot + merge-patch deltas).
+    @Published private(set) var boxes: [[EngineBox]] = []
     @Published private(set) var fps: Double = 60
     @Published private(set) var modes: [String] = []        // index = frame f, 48 chars (8×6 row-major), "" if missing
     @Published private(set) var modeCounts: [Character: Int] = [:]
@@ -51,7 +64,10 @@ final class EngineSessionModel: ObservableObject {
     var onSeekFrame: ((Int) -> Void)?
 
     init(video: URL) {
-        sessionDir = EnginePaths.sessionDir(for: video)
+        // CONTRACT says `<video>.session/`; the engine writes `x.mp4.session` or `x.session` — accept both.
+        sessionCandidates = [EnginePaths.sessionDir(for: video),
+                             URL(fileURLWithPath: video.deletingPathExtension().path + ".session", isDirectory: true)]
+        sessionDir = sessionCandidates[0]
         refresh()
         timer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated { self?.refresh() }
@@ -90,7 +106,8 @@ final class EngineSessionModel: ObservableObject {
 
     func refresh() {
         let fm = FileManager.default
-        if !hasSession, fm.fileExists(atPath: streamURL.path) || fm.fileExists(atPath: eventsURL.path) {
+        if !hasSession, let found = sessionCandidates.first(where: { fm.fileExists(atPath: $0.appendingPathComponent("stream.jsonl").path) || fm.fileExists(atPath: $0.appendingPathComponent("events.jsonl").path) }) {
+            sessionDir = found
             hasSession = true
             // Automation hook for scripted proofs: GR_AUTO_ASK="question" asks once when the session appears.
             if let q = ProcessInfo.processInfo.environment["GR_AUTO_ASK"], !q.isEmpty, !autoAsked {
@@ -113,8 +130,8 @@ final class EngineSessionModel: ObservableObject {
                 guard let self else { return }
                 if let fps { self.fps = fps }
                 if let stream {
-                    self.modes = stream.0; self.modeCounts = stream.1
-                    AppLog.log("engine_stage", ["name": "review_regions", "frames": stream.0.count, "session": self.sessionDir.path])
+                    self.modes = stream.0; self.modeCounts = stream.1; self.boxes = stream.2
+                    AppLog.log("engine_stage", ["name": "review_regions", "frames": stream.0.count, "box_frames": stream.2.filter { !$0.isEmpty }.count, "session": self.sessionDir.path])
                 }
                 if let evs {
                     self.events = evs
@@ -132,26 +149,68 @@ final class EngineSessionModel: ObservableObject {
         return nil
     }
 
-    /// Keeps only f → modes. Uses a cheap string scan per line instead of decoding the (potentially large) state.
-    nonisolated private static func parseStream(_ u: URL) -> ([String], [Character: Int])? {
+    /// Keeps f → modes and f → entity boxes (replaying snapshot + JSON-merge-patch deltas once).
+    nonisolated private static func parseStream(_ u: URL) -> ([String], [Character: Int], [[EngineBox]])? {
         guard let d = try? Data(contentsOf: u) else { return nil }
-        let text = String(decoding: d, as: UTF8.self)
-        var byFrame: [Int: String] = [:]
-        var maxF = -1
+        var rows: [(Int, String, [EngineBox])] = []
         var counts: [Character: Int] = [:]
-        for line in text.split(separator: "\n", omittingEmptySubsequences: true) {
-            guard let f = intField(line, "\"f\""), let m = stringField(line, "\"modes\"") else { continue }
-            byFrame[f] = m
-            maxF = max(maxF, f)
+        var state: [String: Any] = [:]
+        var maxF = -1
+        for line in d.split(separator: 0x0A, omittingEmptySubsequences: true) {
+            guard let o = try? JSONSerialization.jsonObject(with: Data(line)) as? [String: Any],
+                  let f = (o["f"] as? NSNumber)?.intValue else { continue }
+            let m = (o["modes"] as? String) ?? ""
             for c in m { counts[c, default: 0] += 1 }
+            if let st = o["state"] as? [String: Any] { state = st }
+            else if let dl = o["delta"] as? [String: Any], !dl.isEmpty { state = mergePatch(state, dl) }
+            rows.append((f, m, entityBoxes(state)))
+            maxF = max(maxF, f)
         }
-        guard maxF >= 0 else { return ([], [:]) }
+        guard maxF >= 0 else { return ([], [:], []) }
         var arr = [String](repeating: "", count: maxF + 1)
-        for (f, m) in byFrame { arr[f] = m }
-        // carry forward over gaps so the overlay never flickers empty
-        var last = ""
-        for i in arr.indices { if arr[i].isEmpty { arr[i] = last } else { last = arr[i] } }
-        return (arr, counts)
+        var bx = [[EngineBox]](repeating: [], count: maxF + 1)
+        var have = [Bool](repeating: false, count: maxF + 1)
+        for (f, m, b) in rows { arr[f] = m; bx[f] = b; have[f] = true }
+        var last = "", lastB: [EngineBox] = []
+        for i in arr.indices {
+            if have[i] { last = arr[i]; lastB = bx[i] } else { arr[i] = last; bx[i] = lastB }
+        }
+        return (arr, counts, bx)
+    }
+
+    /// RFC 7386 merge patch.
+    nonisolated private static func mergePatch(_ target: [String: Any], _ patch: [String: Any]) -> [String: Any] {
+        var t = target
+        for (k, v) in patch {
+            if v is NSNull { t.removeValue(forKey: k) }
+            else if let pv = v as? [String: Any] { t[k] = mergePatch((t[k] as? [String: Any]) ?? [:], pv) }
+            else { t[k] = v }
+        }
+        return t
+    }
+
+    nonisolated private static func entityBoxes(_ state: [String: Any]) -> [EngineBox] {
+        guard let ents = state["entities"] as? [String: Any] else { return [] }
+        var out: [EngineBox] = []
+        for (id, raw) in ents {
+            guard let e = raw as? [String: Any], let bf = e["bbox"] as? [String: Any],
+                  let v = bf["v"] as? [Any], v.count == 4 else { continue }
+            let b = v.compactMap { ($0 as? NSNumber)?.doubleValue }
+            guard b.count == 4 else { continue }
+            let vis = ((e["visible"] as? [String: Any])?["v"] as? Bool) ?? true
+            let label = ((e["label"] as? [String: Any])?["v"]).map { "\($0)" } ?? ""
+            let type = ((e["type"] as? [String: Any])?["v"]).map { "\($0)" } ?? ""
+            var source = (bf["source"] as? String) ?? "observed"
+            if !vis { source = "inferred" }
+            out.append(EngineBox(id: id, label: label, type: type, bbox: b, visible: vis, source: source,
+                                 conf: (bf["conf"] as? NSNumber)?.doubleValue ?? 0))
+        }
+        return out.sorted { $0.id < $1.id }
+    }
+
+    func boxes(atMs ms: Int) -> [EngineBox]? {
+        guard !boxes.isEmpty else { return nil }
+        return boxes[max(0, min(boxes.count - 1, frame(forMs: ms)))]
     }
 
     nonisolated private static func valueStart(_ line: Substring, _ key: String) -> Substring.Index? {

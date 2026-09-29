@@ -200,3 +200,58 @@ struct FlowRow<Item: Identifiable & Hashable, Content: View>: View {
         }
     }
 }
+
+// MARK: - Bounding boxes at the exact playhead frame
+
+/// Engine session → per-frame replayed state (solid = observed, dashed = propagated, dotted+faded = inferred/occluded).
+/// No session → 1 fps Claude records, linearly interpolated by entity id so boxes still move.
+struct BoxOverlay: View {
+    @ObservedObject var model: ReviewModel
+    @ObservedObject var engine: EngineSessionModel
+
+    var body: some View {
+        GeometryReader { geo in
+            if model.showBoxes {
+                let fit = AVMakeRect(aspectRatio: model.videoSize, insideRect: CGRect(origin: .zero, size: geo.size))
+                if let eb = engine.boxes(atMs: model.currentMs) {
+                    ForEach(eb, id: \.id) { b in
+                        let r = rect(b.bbox, fit)
+                        let style: StrokeStyle = b.source == "observed" ? StrokeStyle(lineWidth: 2)
+                            : b.source == "propagated" ? StrokeStyle(lineWidth: 2, dash: [6, 4])
+                            : StrokeStyle(lineWidth: 1.5, dash: [1.5, 3])
+                        let col = entityColor(b.type == "object" ? "enemy" : b.type)
+                        boxView(r: r, color: col, style: style, text: "\(b.id) \(b.label) \(Int(b.conf * 100))%")
+                            .opacity(b.source == "inferred" || !b.visible ? 0.45 : 1)
+                    }
+                } else {
+                    ForEach(Array(model.interpolatedEntities(atMs: model.currentMs).enumerated()), id: \.offset) { _, e in
+                        if let bb = e.bbox, bb.count == 4 {
+                            boxView(r: rect(bb, fit), color: entityColor(e.type), style: StrokeStyle(lineWidth: 2),
+                                    text: "\(e.label) \(Int(e.confidence * 100))%")
+                        }
+                    }
+                }
+            }
+        }
+        .allowsHitTesting(false)
+    }
+
+    private func rect(_ b: [Double], _ fit: CGRect) -> CGRect {
+        CGRect(x: fit.minX + b[0] * fit.width, y: fit.minY + b[1] * fit.height, width: b[2] * fit.width, height: b[3] * fit.height)
+    }
+
+    private func boxView(r: CGRect, color: Color, style: StrokeStyle, text: String) -> some View {
+        ZStack(alignment: .topLeading) {
+            Rectangle().stroke(color, style: style)
+            Text(text)
+                .font(.system(size: 10, weight: .semibold))
+                .fixedSize()
+                .padding(.horizontal, 3)
+                .background(color.opacity(0.85))
+                .foregroundColor(.black)
+                .offset(y: -14)
+        }
+        .frame(width: max(r.width, 1), height: max(r.height, 1))
+        .position(x: r.midX, y: r.midY)
+    }
+}
