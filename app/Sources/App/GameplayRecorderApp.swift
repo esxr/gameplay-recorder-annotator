@@ -135,6 +135,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                         self?.statusItem.button?.title = String(format: " Annotating %d%% (%d)", Int(frac * 100), n)
                     }
                 }
+                // Marker file tells the review window annotation is complete.
+                FileManager.default.createFile(atPath: video.deletingPathExtension().appendingPathExtension("annotations.done").path, contents: Data())
                 await MainActor.run { [weak self] in self?.statusItem.button?.title = "" }
             } catch {
                 AppLog.log("annotation_error", ["error": "\(error)"])
