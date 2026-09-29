@@ -1,0 +1,32 @@
+name: GameplayRecorder
+options:
+  bundleIdPrefix: com.operantlabs
+  deploymentTarget:
+    macOS: "15.0"
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MACOSX_DEPLOYMENT_TARGET: "15.0"
+    CODE_SIGNING_ALLOWED: "NO"
+    ENABLE_HARDENED_RUNTIME: "NO"
+targets:
+  GameplayRecorder:
+    type: application
+    platform: macOS
+    sources: [Sources]
+    info:
+      path: Sources/App/Info.plist
+      properties:
+        CFBundleName: GameplayRecorder
+        CFBundleDisplayName: Gameplay Recorder
+        LSUIElement: true
+        NSScreenCaptureUsageDescription: Gameplay Recorder records your screen to annotate gameplay.
+        NSHighResolutionCapable: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.operantlabs.GameplayRecorder
+schemes:
+  GameplayRecorder:
+    build:
+      targets:
+        GameplayRecorder: all

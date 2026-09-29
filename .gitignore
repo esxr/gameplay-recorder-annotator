@@ -1,0 +1,23 @@
+.secrets/
+build/
+*.xcuserstate
+DerivedData/
+app/GameplayRecorder.xcodeproj/
+scratch/**/*.mp4
+scratch/**/*.jpg
+scratch/**/*.png
+scratch/**/*.jsonl
+scratch/**/*.log
+scratch/rectest/rectest
+scratch/anntest/anntest
+scratch/reviewtest/reviewtest
+*.frames/
+.DS_Store
+.claude/scheduled_tasks.lock
+# Screen captures of the user's desktop stay local (repo is public)
+proofs/*.png
+proofs/*.mp4
+!proofs/*-crop.png
+!proofs/G1-compare.png
+scratch/reviewtest/ReviewHarness
+scratch/rectest/out.txt
