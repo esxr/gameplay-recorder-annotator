@@ -16,7 +16,7 @@ def main():
     ap.add_argument("--out", default=None)
     ap.add_argument("--no-vlm", action="store_true")
     a = ap.parse_args()
-    out = a.out or os.path.splitext(a.video)[0] + ".session"
+    out = a.out or a.video + ".session"  # CONTRACT: <video>.session (x.mp4.session)
     os.makedirs(out, exist_ok=True)
     for fn in ("stream.jsonl", "events.jsonl"):
         try:

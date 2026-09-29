@@ -189,7 +189,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func openReview(video: URL) {
         let r = ReviewWindowController()
         reviews.append(r)
-        NSApp.activate(ignoringOtherApps: true)
+        // `--background` launches (automation) never take focus.
+        if !CommandLine.arguments.contains("--background") { NSApp.activate(ignoringOtherApps: true) }
         r.present(video: video, annotations: AppPaths.annotationsURL(for: video))
     }
 

@@ -427,6 +427,7 @@ def compile_context(session, query, token_budget=4000):
             ivs = _visible_intervals(pres, vis, s.nb_frames)
             iv = " ".join(f"f{a}-f{b}" for a, b in ivs[:20]) + (" ..." if len(ivs) > 20 else "")
             prop = [f"f{f}" for (f, v, c, src, *_r) in vis if src != "observed"][:8]
+            typ = (s.timelines.get(("entities", eid, "type")) or [(0, "?")])[-1][1]
             line = f"{eid} ({_fmt(label)}): first f{s.entity_first[eid]} last f{s.entity_last[eid]}; visible intervals: {iv or 'none'}"
             if prop:
                 line += f"; visibility PROP/INFER at {' '.join(prop)}"
@@ -472,7 +473,7 @@ def compile_context(session, query, token_budget=4000):
         sections.insert(1, (0, "STATE AT REFERENCED FRAMES", lines))
 
     # assemble with budget
-    budget_chars = int(token_budget * 3.5)
+    budget_chars = int(token_budget * 3.5 * 0.96)  # margin: estimate must stay <= budget
     out, used = [], 0
     for pri in sorted({p for p, _, _ in sections}):
         for p, title, lines in sections:
@@ -549,6 +550,8 @@ def _compact_state(s, f):
         if v:
             bb = (ent.get("bbox") or {}).get("v")
             src = (ent.get("visible") or ent.get("bbox") or {}).get("source")
+            lab = (ent.get("label") or {}).get("v") or (ent.get("type") or {}).get("v")
+            typ = (ent.get("type") or {}).get("v")
             vis.append(f"{eid}@{_fmt(bb)}({_src_tag(src, None)})")
     parts.append(f"visible_entities={len(vis)}: " + " ".join(vis))
     return " ".join(parts)
