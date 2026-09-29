@@ -1,0 +1,18 @@
+== ffprobe: /Users/pranav/Movies/GameplayRecorder/Recording 2026-09-30 03.19.10.mp4
+codec_name=h264
+width=3456
+height=2234
+r_frame_rate=60/1
+avg_frame_rate=60/1
+nb_frames=2482
+duration=41.366667
+== JSONL: /Users/pranav/Movies/GameplayRecorder/Recording 2026-09-30 03.19.10.annotations.jsonl
+lines=42
+jq_parse=ok
+nonempty_entities_or_hud=42 (100%)
+triggers:   42 sample_1fps 
+== log timing
+recording_stopped=2026-09-29T17:19:51.992Z
+annotation_started=2026-09-29T17:19:51.999Z
+delta_s=0.007
+2026-09-29T17:21:47.043Z review_markers count=42 jsonl_lines=42

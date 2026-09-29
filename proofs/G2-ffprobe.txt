@@ -1,0 +1,23 @@
+== Recording 2026-09-30 03.19.10.mp4
+codec_name=h264
+width=3456
+height=2234
+r_frame_rate=60/1
+avg_frame_rate=60/1
+nb_frames=2482
+duration=41.366667
+== Recording 2026-09-30 03.27.15.mp4
+codec_name=h264
+width=2000
+height=1280
+r_frame_rate=60/1
+avg_frame_rate=60/1
+nb_frames=2372
+duration=39.533333
+== app log
+2026-09-29T17:19:10.356Z record_requested mode=recordEntireScreen rect=nil screen=1
+2026-09-29T17:19:10.601Z recording_started fps=60 height=2234 mode=recordEntireScreen path=/Users/pranav/Movies/GameplayRecorder/Recording 2026-09-30 03.19.10.mp4 width=3456
+2026-09-29T17:19:51.992Z recording_stopped duration_s=41.37 frames=2482 path=/Users/pranav/Movies/GameplayRecorder/Recording 2026-09-30 03.19.10.mp4
+2026-09-29T17:27:15.223Z record_requested mode=recordSelectedPortion rect={{300,250},{1000,640}} screen=1
+2026-09-29T17:27:15.487Z recording_started fps=60 height=1280 mode=recordSelectedPortion path=/Users/pranav/Movies/GameplayRecorder/Recording 2026-09-30 03.27.15.mp4 width=2000
+2026-09-29T17:27:55.042Z recording_stopped duration_s=39.53 frames=2372 path=/Users/pranav/Movies/GameplayRecorder/Recording 2026-09-30 03.27.15.mp4
