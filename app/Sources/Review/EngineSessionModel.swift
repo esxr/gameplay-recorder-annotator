@@ -109,11 +109,12 @@ final class EngineSessionModel: ObservableObject {
         if !hasSession, let found = sessionCandidates.first(where: { fm.fileExists(atPath: $0.appendingPathComponent("stream.jsonl").path) || fm.fileExists(atPath: $0.appendingPathComponent("events.jsonl").path) }) {
             sessionDir = found
             hasSession = true
-            // Automation hook for scripted proofs: GR_AUTO_ASK="question" asks once when the session appears.
-            if let q = ProcessInfo.processInfo.environment["GR_AUTO_ASK"], !q.isEmpty, !autoAsked {
-                autoAsked = true; question = q
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in MainActor.assumeIsolated { self?.ask() } }
-            }
+        }
+        // Automation hook for scripted proofs: GR_AUTO_ASK="question" asks once, after the engine has finished (meta.json exists).
+        if hasSession, !autoAsked, let q = ProcessInfo.processInfo.environment["GR_AUTO_ASK"], !q.isEmpty,
+           fm.fileExists(atPath: metaURL.path) {
+            autoAsked = true; question = q
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in MainActor.assumeIsolated { self?.ask() } }
         }
         guard hasSession, !parsing else { return }
         let ms = Self.stamp(metaURL), ss = Self.stamp(streamURL), es = Self.stamp(eventsURL)
@@ -287,6 +288,10 @@ final class EngineSessionModel: ObservableObject {
                 }
                 self.isAsking = false
                 if let first = self.askEvidence.first { self.shownCrop = self.resolve(first.crop); self.onSeekFrame?(first.f) }
+                AppLog.log("engine_stage", ["name": "compile", "session": session, "context_tokens": self.contextTokens ?? -1,
+                                            "evidence": self.askEvidence.count])
+                AppLog.log("engine_stage", ["name": "answer", "session": session, "answer_chars": self.answer?.count ?? 0,
+                                            "model": (o["model"] as? String) ?? "server-default"])
                 AppLog.log("engine_stage", ["name": "ask_ui", "phase": "answer", "http": code, "session": session,
                                             "context_tokens": self.contextTokens ?? -1, "evidence": self.askEvidence.count,
                                             "answer_chars": self.answer?.count ?? 0])

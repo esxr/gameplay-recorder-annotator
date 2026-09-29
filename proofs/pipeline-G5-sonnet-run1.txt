@@ -1,33 +1,55 @@
+session=/Users/pranav/Movies/GameplayRecorder/Recording 2026-09-30 03.58.26.mp4.session frames=4580 events=118 video=testgame/out/session.mp4 truth=/Users/pranav/Desktop/gameplay_recorder_annotator/testgame/out/truth.jsonl
+
 == G5: query API over HTTP + LLM answers via compile_context ==
 HTTP ops: 8/8 returned 200 + non-empty  -> proofs/pipeline-G5-api.txt  (PASS)
 questions: engine/questions/testgame.json created_at=2026-09-30T04:02:58+10:00 (file mtime 2026-09-30T04:02:58); eval started 2026-09-30T04:32:43
+STAGE compile tokens=3523 budget=4000 evidence=20 ms=3
+STAGE answer model=claude-sonnet-5-5 in_tokens=7268 out_tokens=193 ms=10640
   [q1] WRONG ctx_tokens=3523 in_tokens=7268
       Q: Exactly which video frame first shows four enemies visible on screen at the same time?
       expected: 1704   got: 419
+STAGE compile tokens=3635 budget=4000 evidence=20 ms=15
+STAGE answer model=claude-sonnet-5-5 in_tokens=7502 out_tokens=136 ms=6969
   [q2] CORRECT ctx_tokens=3635 in_tokens=7502
       Q: How many enemies were visible in the frame just before the ammo value first decreased?
       expected: 3   got: 3
+STAGE compile tokens=2665 budget=4000 evidence=20 ms=4
+STAGE answer model=claude-sonnet-5-5 in_tokens=5619 out_tokens=206 ms=4902
   [q3] CORRECT ctx_tokens=2665 in_tokens=5619
       Q: How much health was lost between the first shot (first ammo decrease) and the fourth shot (fourth ammo decrease)?
       expected: 7   got: 7
+STAGE compile tokens=2588 budget=4000 evidence=20 ms=0
+STAGE answer model=claude-sonnet-5-5 in_tokens=5456 out_tokens=43 ms=44555
   [q4] CORRECT ctx_tokens=2588 in_tokens=5456
       Q: Did the ammo value first decrease before or after the first screen flash? Answer 'before' or 'after'.
       expected: before   got: before
+STAGE compile tokens=3622 budget=4000 evidence=20 ms=1
+STAGE answer model=claude-sonnet-5-5 in_tokens=7451 out_tokens=88 ms=1428
   [q5] CORRECT ctx_tokens=3622 in_tokens=7451
       Q: What did the objective text change from and to?
       expected: ['Reach the gate', 'Defend the core']   got: From "Reach the gate" to "Defend the core"
+STAGE compile tokens=2477 budget=4000 evidence=10 ms=0
+STAGE answer model=claude-sonnet-5-5 in_tokens=5210 out_tokens=108 ms=2045
   [q6] CORRECT ctx_tokens=2477 in_tokens=5210
       Q: At which video frame did the first flash that lasted exactly one frame occur?
       expected: 521   got: 521
+STAGE compile tokens=3836 budget=4000 evidence=20 ms=9
+STAGE answer model=claude-sonnet-5-5 in_tokens=7946 out_tokens=252 ms=3561
   [q7] WRONG ctx_tokens=3836 in_tokens=7946
       Q: Around frame 534 an enemy disappears behind the grey cover pillar (visible enemy count drops). Was it seen again, and at which frame did it first reappear? Answer with the reappearance frame.
       expected: 565   got: 559
+STAGE compile tokens=3830 budget=4000 evidence=20 ms=2
+STAGE answer model=claude-sonnet-5-5 in_tokens=7904 out_tokens=79 ms=1529
   [q8] CORRECT ctx_tokens=3830 in_tokens=7904
       Q: What was the score shown at video frame 2400 (t = 40.00 s)?
       expected: 850   got: 850
+STAGE compile tokens=3525 budget=4000 evidence=20 ms=6
+STAGE answer model=claude-sonnet-5-5 in_tokens=7264 out_tokens=77 ms=1663
   [q9] CORRECT ctx_tokens=3525 in_tokens=7264
       Q: How many separate screen flashes occurred in the whole video?
       expected: 10   got: 10
+STAGE compile tokens=3833 budget=4000 evidence=20 ms=3
+STAGE answer model=claude-sonnet-5-5 in_tokens=7911 out_tokens=73 ms=3631
   [q10] WRONG ctx_tokens=3833 in_tokens=7911
       Q: How many enemies were visible at video frame 1200 (t = 20.00 s)?
       expected: 3   got: 4
@@ -35,3 +57,5 @@ score 7/10  (>=8: FAIL)  model=claude-sonnet-5-5
 context tokens per question: [3523, 3635, 2665, 2588, 3622, 2477, 3836, 3830, 3525, 3833]  max=3836 (<=4000: PASS) mean=3353
 all-frames baseline: 4580 frames x ~1000 image tokens = 4580000 tokens; dense per-frame JSON = 4068662 tokens
 ratio max-context / image baseline = 0.084%  / dense JSON = 0.09%  (<=10%: PASS)
+-> proofs/pipeline-G5-report.txt
+

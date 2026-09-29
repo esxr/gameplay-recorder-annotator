@@ -1,0 +1,16 @@
+2026-09-29T18:36:51.277Z recording_started fps=60 height=752 mode=recordSelectedWindow path=/Users/pranav/Movies/GameplayRecorder/Recording 2026-09-30 04.36.50.mp4 width=1280
+2026-09-29T18:37:26.406Z recording_stopped duration_s=35.13 frames=2108 path=/Users/pranav/Movies/GameplayRecorder/Recording 2026-09-30 04.36.50.mp4
+2026-09-29T18:37:26.814Z engine_stage fps=60.00 name=capture nb_frames=2108 session=/Users/pranav/Movies/GameplayRecorder/Recording 2026-09-30 04.36.50.mp4.session size=1280x752 video=Recording
+2026-09-29T18:37:28.560Z engine_stage elapsed=1.9s f=0 name=change session=/Users/pranav/Movies/GameplayRecorder/Recording 2026-09-30 04.36.50.mp4.session
+2026-09-29T18:37:35.816Z engine_stage elapsed=9.1s f=600 name=change session=/Users/pranav/Movies/GameplayRecorder/Recording 2026-09-30 04.36.50.mp4.session
+2026-09-29T18:37:42.476Z engine_stage elapsed=15.8s f=1200 name=change session=/Users/pranav/Movies/GameplayRecorder/Recording 2026-09-30 04.36.50.mp4.session
+2026-09-29T18:37:51.266Z engine_stage elapsed=24.6s f=1800 name=change session=/Users/pranav/Movies/GameplayRecorder/Recording 2026-09-30 04.36.50.mp4.session
+2026-09-29T18:37:53.591Z engine_stage flashes=4 frames=2108 name=change secs=2.8 session=/Users/pranav/Movies/GameplayRecorder/Recording 2026-09-30 04.36.50.mp4.session
+2026-09-29T18:37:53.591Z engine_stage C=96548 F=96 P=1788 R=356 V=2396 name=schedule session=/Users/pranav/Movies/GameplayRecorder/Recording 2026-09-30 04.36.50.mp4.session skip_vlm_pct=99.6 vlm_frames=10 vlm_pct=0.47
+2026-09-29T18:37:53.591Z engine_stage entities=8 events=48 hud=['score', name=state ocr_calls=43 session=/Users/pranav/Movies/GameplayRecorder/Recording 2026-09-30 04.36.50.mp4.session
+2026-09-29T18:37:53.593Z engine_stage bytes=413322 events=48 frames=2108 match=True name=store nb_frames=2108 out=/Users/pranav/Movies/GameplayRecorder/Recording secs=26.9 session=/Users/pranav/Movies/GameplayRecorder/Recording 2026-09-30 04.36.50.mp4.session
+2026-09-29T18:37:53.637Z engine_finished exit=0 session=/Users/pranav/Movies/GameplayRecorder/Recording 2026-09-30 04.36.50.mp4.session
+2026-09-29T18:37:56.513Z engine_stage name=ask_ui phase=submit question="When did health first drop, and what was it before and after?" session=/Users/pranav/Movies/GameplayRecorder/Recording 2026-09-30 04.36.50.mp4.session
+2026-09-29T18:37:58.878Z engine_stage context_tokens=1132 evidence=10 name=compile session=/Users/pranav/Movies/GameplayRecorder/Recording 2026-09-30 04.36.50.mp4.session
+2026-09-29T18:37:58.880Z engine_stage answer_chars=56 model=server-default name=answer session=/Users/pranav/Movies/GameplayRecorder/Recording 2026-09-30 04.36.50.mp4.session
+2026-09-29T18:37:58.881Z engine_stage answer_chars=56 context_tokens=1132 evidence=10 http=200 name=ask_ui phase=answer session=/Users/pranav/Movies/GameplayRecorder/Recording 2026-09-30 04.36.50.mp4.session

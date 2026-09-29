@@ -20,3 +20,5 @@
 | P4 | App: run engine on stop, stage logs, review window region modes + events + Ask box | agent-appint | app/Sources/Review, app/Sources/Pipeline | done 03:53 (build ok; tested w/ fake session) |
 | P5 | Proofs pipeline-G1..G6 | orchestrator | proofs/ | todo |
 | P6 | Fix static bboxes: per-frame engine entity boxes at playhead (observed/propagated/inferred styles) + 1 fps interpolation fallback | agent-appint | app/Sources/Review | done 04:20 (t10.png: boxes on enemies, per-frame; stray title-bar boxes = engine fix pending) |
+| P7 | G6 in-app run: record → app runs engine (5 stages) → auto Ask after engine done → compile+answer logged; pipeline-G6-ask.png | orchestrator | proofs/pipeline-G6-* | done 04:39 |
+| P8 | G5 QA ≥ 8/10: haiku 5/10, sonnet 7/10 (misses = entity count/visibility) → particle + partial-occlusion fix | agent-engine | engine/core | in progress 04:40 |
