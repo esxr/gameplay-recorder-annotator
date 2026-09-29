@@ -63,7 +63,24 @@ See the per-page `⚠️ Tension` callouts. Consolidated:
 9. **Lossy summaries vs traceability.** Long-term summaries (§20, §25) must still trace back to evidence (§30), but the mechanism is not specified. → [[three-level-semantic-memory]]
 10. **No numeric targets.** The metrics (§51) have no thresholds. The acceptance criteria (§65) use words like "substantial portion". → [[evaluation-and-metrics]]
 11. **Semantic cache invalidation** ("changes materially") has no threshold. → [[semantic-cache]]
-12. **Context compiler ranking policy** under a token budget is not specified. → [[context-compiler]]
+12. **Context compiler ranking policy** under a token budget is not specified. `compile_context` (§39) also leaves out the timestamp-range and precision inputs listed in §28. → [[context-compiler]], [[query-and-streaming-api]]
+13. **Events have no canonical home.** They appear as a WorldState branch (§13), separate event records (§20) and an `append` delta (§38). The §18 and §38 event schemas also differ (`participants`/frames/evidence vs `actor` only). → [[relationships-and-events]], [[persistent-world-state]]
+14. **Inconsistent state paths** across examples: `player.health` (§19), `hud.health` (§15), `entities.weapon_3.ammo` (§38). → [[snapshot-delta-storage]]
+15. **Evidence refs vs adaptive tiles.** `frame:N:region:392` needs stable region IDs, but the quadtree re-subdivides. → [[adaptive-spatial-representation]], [[evidence-and-provenance]]
+16. **Corrections don't re-base deltas.** An FR-24 correction leaves later deltas that were computed from the wrong value. → [[snapshot-delta-storage]], [[human-verification]]
+17. **Determinism is at risk from many directions:** learned adapters, a history-dependent semantic cache, query relevance feeding the scheduler, non-deterministic GPU/VLM providers, and a scheduler that learns (§66.7). → [[game-adapters]], [[semantic-cache]], [[model-agnostic-providers]]
+18. **Short events aren't protected.** Cheap L0–L1 COPY decisions can miss a one-frame event. Graceful degradation (§35) conflicts with §54, and OCR hysteresis (§57) suppresses 1–2-frame text. → [[short-event-preservation]], [[ocr-and-text]]
+19. **The schema has no "unknown" value.** §57 requires hidden state to be marked unknown, but the §49 schema is only value + confidence. No calibration requirement exists for confidences from swappable models. → [[confidence-and-uncertainty]]
+20. **Local-only vs external LLMs.** Modes B and C send compiled context off-device with no redaction requirement. Privacy scope also leaves out audio transcripts and keystrokes. → [[privacy-and-security]], [[llm-integration-modes]]
+21. **Codec residual is first in the formula but conditional.** It also treats appearance similarity (which should *lower* priority) as additive. The formula terms don't match the signals listed under it. → [[change-importance-scoring]]
+22. **The §26 module list and §60 provider interfaces don't match.** Scene classifier, icon, pose, depth, audio and ASR have no provider. → [[perception-modules]], [[model-agnostic-providers]]
+23. **Research attribution nits:** MovieChat is two-tier but is credited for three-level memory. STCN's expansion doesn't match the cited title. Mask2Former and Google Video Intelligence have no role in §61. → [[moviechat]], [[stcn]], [[mask2former]]
+
+### Tension register (⚠️ callouts per page, 128 total as of 2026-09-30)
+
+privacy-and-security 6 · change-importance-scoring 5 · snapshot-delta-storage 4 · semantic-annotation-taxonomy 4 · selective-inference-scheduler 4 · relationships-and-events 4 · persistent-world-state 4 · open-research-questions 4 · failure-modes 4 · evidence-and-provenance 4 · evaluation-and-metrics 4 · confidence-and-uncertainty 4 · 3 each: three-level-semantic-memory, short-event-preservation, semantic-cache, scene-resets, region-update-modes, query-and-streaming-api, model-agnostic-providers, human-verification, game-adapters, frame-identity-and-capture, drift-control, context-compiler, auxiliary-channels, adaptive-spatial-representation · 2 each: ui-hud-perception, sixty-fps-contract, query-adaptive-fidelity, perception-modules, ocr-and-text, model-hierarchy, llm-integration-modes, inspection-and-session-explorer, compute-efficiency-objective, change-versus-meaning, annotation-density · 1 each: xmem, vpt, vid2seq, strategic-differentiation, semantic-video-codec, omniparser, moviechat, metom, mask2former, game-integrity-boundary, ferret-ui, encord.
+
+Regenerate with: `grep -rc "⚠️ Tension" wiki | grep -v ':0'`.
 
 ## Provenance notes
 

@@ -6,7 +6,7 @@ _Last updated: 2026-09-30 · 1 source · 67 pages (1 overview, 1 source, 23 enti
 - [[overview]] — thesis, how the pieces fit, current assessment, next sources to ingest
 
 ## Sources
-- [[semantic-video-state-engine-prd]] — founding PRD: 60 fps semantic state stream for gameplay video; key claims, unverified data points, 12 internal tensions
+- [[semantic-video-state-engine-prd]] — founding PRD: 60 fps semantic state stream for gameplay video; key claims, unverified data points, 23 consolidated tensions + register
 
 ## Concepts — core architecture
 - [[semantic-video-codec]] — encode which *meanings* changed, not which pixels changed
