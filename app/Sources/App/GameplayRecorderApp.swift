@@ -30,6 +30,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         })
         setupStatusItem()
         registerHotKey()
+        // Automation hook for scripted proofs: `notifyutil`-style distributed notification stops a recording.
+        DistributedNotificationCenter.default().addObserver(forName: .init("com.operantlabs.GameplayRecorder.stop"), object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { if self?.recorder.isRecording == true { self?.stopRecording() } }
+        }
         // `--review <video.mp4>` opens an existing recording without recording.
         let args = CommandLine.arguments
         if let i = args.firstIndex(of: "--review"), i + 1 < args.count {

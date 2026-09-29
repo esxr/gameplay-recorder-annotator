@@ -22,6 +22,8 @@ final class ToolbarPanel: NSPanel {
     override func cancelOperation(_ sender: Any?) { onEscape?() }
 }
 
+private extension CGRect { var area: CGFloat { isNull ? 0 : width * height } }
+
 final class DraggableRootView: NSView { override var mouseDownCanMoveWindow: Bool { true } }
 
 /// Clone of the macOS Screenshot toolbar (Cmd+Shift+5).
@@ -110,7 +112,8 @@ final class DraggableRootView: NSView { override var mouseDownCanMoveWindow: Boo
             (.captureSelectedWindow, ToolbarMetrics.captureCentersX[1]),
             (.captureSelectedPortion, ToolbarMetrics.captureCentersX[2]),
             (.recordEntireScreen, ToolbarMetrics.recordCentersX[0]),
-            (.recordSelectedPortion, ToolbarMetrics.recordCentersX[1]),
+            (.recordSelectedWindow, ToolbarMetrics.recordCentersX[1]),
+            (.recordSelectedPortion, ToolbarMetrics.recordCentersX[2]),
         ]
         let bs = ToolbarMetrics.modeButtonSize
         for (m, cx) in modes {
@@ -200,12 +203,13 @@ final class DraggableRootView: NSView { override var mouseDownCanMoveWindow: Boo
             lastRect = sel
             w.contentView = v
             overlays.append(w)
-        case .captureEntireScreen, .recordEntireScreen, .captureSelectedWindow:
+        case .captureEntireScreen, .recordEntireScreen, .captureSelectedWindow, .recordSelectedWindow:
             for screen in NSScreen.screens {
                 let w = OverlayWindow(screen: screen)
                 let v = ClickCatcherView(frame: NSRect(origin: .zero, size: screen.frame.size))
-                v.screenHint = mode != .captureSelectedWindow
-                if mode == .captureSelectedWindow {
+                let windowMode = mode == .captureSelectedWindow || mode == .recordSelectedWindow
+                v.screenHint = !windowMode
+                if windowMode {
                     v.highlightProvider = { p in ScreenshotSaver.windowFrame(at: p) }
                     v.onClick = { [weak self] p in self?.perform(clickPoint: p) }
                 } else {
@@ -240,7 +244,7 @@ final class DraggableRootView: NSView { override var mouseDownCanMoveWindow: Boo
 
     @objc private func primaryClicked() {
         switch mode {
-        case .captureSelectedWindow:
+        case .captureSelectedWindow, .recordSelectedWindow:
             // Native: Capture in window mode captures the window under the pointer when clicked; the button
             // falls back to the frontmost window at the screen center.
             let f = toolbarScreen.frame
@@ -285,6 +289,7 @@ final class DraggableRootView: NSView { override var mouseDownCanMoveWindow: Boo
     }
 
     private func perform(clickPoint p: NSPoint) {
+        if mode == .recordSelectedWindow { recordWindow(at: p); return }
         let folder = saveFolder, delay = timerSeconds
         hide()
         Task { @MainActor in
@@ -298,6 +303,24 @@ final class DraggableRootView: NSView { override var mouseDownCanMoveWindow: Boo
             } catch {
                 AppLog.log("screenshot_failed", ["error": error.localizedDescription])
             }
+        }
+    }
+
+    private func recordWindow(at p: NSPoint) {
+        guard let frame = ScreenshotSaver.windowFrame(at: p) else {
+            AppLog.log("record_window_missed", ["point": NSStringFromPoint(p).replacingOccurrences(of: " ", with: "")]); return
+        }
+        let screen = NSScreen.screens.max(by: { $0.frame.intersection(frame).area < $1.frame.intersection(frame).area }) ?? toolbarScreen
+        let rect = frame.intersection(screen.frame)
+        let delay = timerSeconds
+        hide()
+        Task { @MainActor in
+            if delay > 0 { try? await Task.sleep(nanoseconds: UInt64(delay) * 1_000_000_000) }
+            AppLog.log("record_requested", ["mode": CaptureMode.recordSelectedWindow.rawValue,
+                                            "rect": NSStringFromRect(rect).replacingOccurrences(of: " ", with: ""),
+                                            "screen": ScreenshotSaver.displayID(of: screen)])
+            self.onRecord(RecordingRequest(mode: .recordSelectedWindow, screen: screen, rect: rect,
+                                           captureMicrophone: self.microphone, showMouseClicks: self.showMouseClicks))
         }
     }
 

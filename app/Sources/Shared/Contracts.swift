@@ -6,9 +6,9 @@ import Foundation
 
 enum CaptureMode: String, CaseIterable {
     case captureEntireScreen, captureSelectedWindow, captureSelectedPortion
-    case recordEntireScreen, recordSelectedPortion
+    case recordEntireScreen, recordSelectedWindow, recordSelectedPortion
 
-    var isRecording: Bool { self == .recordEntireScreen || self == .recordSelectedPortion }
+    var isRecording: Bool { self == .recordEntireScreen || self == .recordSelectedWindow || self == .recordSelectedPortion }
 }
 
 /// What the user asked to record. `rect` is in global AppKit screen coordinates (points), nil = whole display.

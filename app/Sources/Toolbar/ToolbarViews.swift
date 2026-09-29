@@ -2,20 +2,18 @@ import AppKit
 
 // Visual building blocks of the Cmd+Shift+5 clone. Measurements (points) come from
 // proofs/G1-native.png: toolbar 547 x 50, corner radius 14, fill ~#222222.
-// Native macOS 26 has a 6th slot (Record Selected Window) that the 5-mode contract lacks, so the
-// toolbar is one 56 pt slot narrower (491 pt); everything left of that slot sits at native x offsets.
 
 enum ToolbarMetrics {
-    static let size = NSSize(width: 491, height: 50)
+    static let size = NSSize(width: 547, height: 50)
     static let cornerRadius: CGFloat = 14
     static let bottomOffset: CGFloat = 102           // native toolbarOrigin.y
     static let closeCenterX: CGFloat = 22
     static let captureCentersX: [CGFloat] = [63, 111, 160]
     static let divider1X: CGFloat = 191
-    static let recordCentersX: [CGFloat] = [226, 282]
-    static let divider2X: CGFloat = 320
-    static let optionsCenterX: CGFloat = 365
-    static let primaryFrame = NSRect(x: 408, y: 7, width: 76, height: 36)
+    static let recordCentersX: [CGFloat] = [226, 282, 340]
+    static let divider2X: CGFloat = 376
+    static let optionsCenterX: CGFloat = 421
+    static let primaryFrame = NSRect(x: 464, y: 7, width: 76, height: 36)
     static let modeButtonSize = NSSize(width: 44, height: 38)
 }
 
@@ -33,6 +31,7 @@ enum ToolbarMetrics {
         case .captureSelectedWindow: return sym("macwindow", "rectangle")
         case .captureSelectedPortion: return sym("rectangle.dashed", "rectangle")
         case .recordEntireScreen: return badged(sym("dock.rectangle", "rectangle.inset.filled"))
+        case .recordSelectedWindow: return badged(sym("macwindow", "rectangle"))
         case .recordSelectedPortion: return badged(sym("rectangle.dashed", "rectangle"))
         }
     }
@@ -87,6 +86,7 @@ final class ModeButton: NSButton {
         case .captureSelectedWindow: return "Capture Selected Window"
         case .captureSelectedPortion: return "Capture Selected Portion"
         case .recordEntireScreen: return "Record Entire Screen"
+        case .recordSelectedWindow: return "Record Selected Window"
         case .recordSelectedPortion: return "Record Selected Portion"
         }
     }
