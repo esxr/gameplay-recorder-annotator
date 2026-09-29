@@ -95,6 +95,8 @@ class Track:
         self.moved = 0.0
         self._vlm = False
         self.sig = None
+        self.areas = []
+        self.cur_area = 0.0
         self.origin = self.bbox[:2] + self.bbox[2:] / 2
         self.anchor_bb = [float(v) for v in bbox]
 
@@ -419,6 +421,11 @@ class Engine:
             if e["f"] >= f_eff:
                 e["state"][kind][name] = copy.deepcopy(fld)
 
+    @staticmethod
+    def ref_area(t):
+        """Typical fully-visible blob area of a track (80th percentile of its history)."""
+        return float(np.percentile(t.areas, 80)) if t.areas else 0.0
+
     def bbox_field(self, t, f, bb, conf, src):
         """Re-emit an entity's bbox field only when it moved > EMIT_MOVE (or provenance changed) → small deltas."""
         last = getattr(t, "_emit", None)
@@ -632,6 +639,8 @@ class Engine:
                     t.moved += float(np.hypot(*(nc - oc)))
                     old = t.bbox.copy()
                     t.bbox = d
+                    t.cur_area = float(bl[di][4])
+                    t.areas.append(t.cur_area); t.areas = t.areas[-240:]
                     t.sig = sigs[di] if t.sig is None else 0.8 * t.sig + 0.2 * sigs[di]
                     t.last_seen = f
                     t.hits += 1
@@ -647,6 +656,7 @@ class Engine:
                     if di not in used_d:
                         t = Track(None, d, f)
                         t.sig = sigs[di]
+                        t.cur_area = float(bl[di][4]); t.areas = [t.cur_area]
                         self.tent.append(t)
                         new_cells.update(cells_of(d))
                 # tentative → confirmed
@@ -659,6 +669,9 @@ class Engine:
                         self.ui_mask[y0:y1 + 1, x0:x1 + 1] = True
                         continue
                     if t.last_seen == f and t.hits >= 10 and disp >= CONFIRM_MOVE:
+                        others = [self.ref_area(o) for o in self.tracks.values()]
+                        if len(others) >= 2 and np.median(t.areas) < 0.5 * float(np.median(others)):
+                            continue    # particle / projectile-sized blob (PRD §57) → not an entity
                         rt = self.reidentify(t, f)
                         if rt is not None:
                             new_cells.update(cells_of(t.bbox))
@@ -802,7 +815,13 @@ class Engine:
             ents = {}
             for t in self.tracks.values():
                 bb = [float(np.clip(v, 0, 1)) for v in t.bbox]
-                if t.hidden_since is None:
+                partial = (t.hidden_since is None and len(t.areas) >= 10 and t.last_seen == f
+                           and t.cur_area < 0.6 * self.ref_area(t))
+                if partial:   # partially emerged from / behind an occluder → not counted visible (PRD §57)
+                    conf = 0.6 * DECAY_P ** (f - t.anchor_f)
+                    src = "inferred"
+                    vis = field(False, 0.6, "inferred", t.anchor_f, t.anchor_bb, t.crop)
+                elif t.hidden_since is None:
                     conf = t.anchor_conf * DECAY_P ** (f - t.anchor_f)
                     src = "observed" if t.anchor_f == f else "propagated"
                     vis = field(True, 0.9, "observed", t.anchor_f, t.anchor_bb, t.crop)

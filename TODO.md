@@ -8,17 +8,17 @@
 | T3 | Frame extraction (1 fps + scene change) + Claude vision → JSONL (G3) | agent-annotator | Sources/Annotation | done 03:12 (20/20 lines, 100% non-empty) |
 | T4 | Review window: AVPlayer + timeline markers + annotation panel (G4) | agent-review | Sources/Review | done 03:07 (harness: 20 markers = 20 lines) |
 | T5 | Integration: AppDelegate wiring, menu-bar stop item, hotkey | orchestrator | Sources/App | BUILD SUCCEEDED 03:10 |
-| T6 | Proofs G1-G5 in proofs/ + e2e recording | orchestrator | proofs/ | G1 G2 G3 G4 done; G5 e2e in progress 03:30 |
+| T6 | Proofs G1-G5 in proofs/ + e2e recording | orchestrator | proofs/ | G1 G2 G3 G4 done; G5 build OK, e2e take recording is 58 s (<60 s) — retake needs screen, not done |
 
 ## Part 2 — GOAL-pipeline.md (deadline 05:00 AEST)
 | # | Task | Owner | Files | Status |
 |---|------|-------|-------|--------|
 | P0 | Contract, .venv (numpy+PIL copied locally; PyPI unreachable), `grctl record x,y,w,h` hook | orchestrator | engine/CONTRACT.md, app/Sources/App | done 03:47 |
-| P1 | Test game + truth.jsonl + recording of it via app (no focus steal) | agent-testgame | testgame/ | redo: native 60 Hz game in normal background window + window-ID capture (browser run invalid: wrong screen, 30 fps) |
+| P1 | Test game + truth.jsonl + recording of it via app (no focus steal) | agent-testgame | testgame/ | done 03:58 (native 60 Hz game, window-ID capture, truth 4201 lines) |
 | P2 | Engine core: decode every frame, 8×6 change analysis, 5-mode scheduler, tracker ids, HUD OCR, flashes, VLM on R/F, snapshot+delta store, evidence | agent-engine | engine/core/, engine/run.py | done 04:31: final report G1-G4 all PASS (ids 43→17, id switches 0.33%, health 10/10, ammo 30/31) |
-| P3 | Query API (8 ops) + HTTP server + context compiler + /ask + report.py eval + 1 fps baseline | agent-api | engine/api.py, engine/server.py, engine/report.py | report run 04:25: G1 G2 G4 PASS; G3 flashes 10/10 but HUD exact-frame fail; G5 8/8 HTTP, LLM 6/10 (fail) → engine fixes |
+| P3 | Query API (8 ops) + HTTP server + context compiler + /ask + report.py eval + 1 fps baseline | agent-api | engine/api.py, engine/server.py, engine/report.py | done 04:47: 8/8 HTTP; final report G1-G5 all PASS |
 | P4 | App: run engine on stop, stage logs, review window region modes + events + Ask box | agent-appint | app/Sources/Review, app/Sources/Pipeline | done 03:53 (build ok; tested w/ fake session) |
-| P5 | Proofs pipeline-G1..G6 | orchestrator | proofs/ | todo |
+| P5 | Proofs pipeline-G1..G6 | orchestrator | proofs/ | done 04:45: pipeline-G1..G6 all PASS (G5 sonnet 9/10) |
 | P6 | Fix static bboxes: per-frame engine entity boxes at playhead (observed/propagated/inferred styles) + 1 fps interpolation fallback | agent-appint | app/Sources/Review | done 04:20 (t10.png: boxes on enemies, per-frame; stray title-bar boxes = engine fix pending) |
 | P7 | G6 in-app run: record → app runs engine (5 stages) → auto Ask after engine done → compile+answer logged; pipeline-G6-ask.png | orchestrator | proofs/pipeline-G6-* | done 04:39 |
-| P8 | G5 QA ≥ 8/10: haiku 5/10, sonnet 7/10 (misses = entity count/visibility) → particle + partial-occlusion fix | agent-engine | engine/core | in progress 04:40 |
+| P8 | G5 QA ≥ 8/10: haiku 5/10, sonnet 7/10 (misses = entity count/visibility) → particle + partial-occlusion fix | agent-engine | engine/core | done 04:45: sonnet 9/10 (q1 still wrong), G1-G4 no regression |
