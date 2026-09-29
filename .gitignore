@@ -26,3 +26,6 @@ scratch/rectest/out.txt
 scratch/tools/*
 !scratch/tools/*.swift
 .venv/
+__pycache__/
+*.pyc
+*.session/
