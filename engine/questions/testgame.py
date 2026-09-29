@@ -102,7 +102,7 @@ def make(truth_path, video, out_path, fps=None):
               "q": "At which video frame did the first flash that lasted exactly one frame occur?",
               "answer": (one[0][0] if one else runs[0][0])})
     # 7 enemy behind cover: first drop in count (in level1 not at spawn/death) -> reappear frame
-    fd = None
+    fd, eid = None, None
     for i in range(1, n):
         if cnt(rows[i]) < cnt(rows[i - 1]) and rows[i]["scene"] == rows[i - 1]["scene"] == "level1":
             ids_prev = {e["id"] for e in rows[i - 1]["enemies"]}

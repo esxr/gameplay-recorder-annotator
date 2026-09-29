@@ -270,7 +270,7 @@ class Engine:
         if self.ocr_calls > max(300, 0.1 * self.nb) or len(self.ocr_q) > 12:
             return
         self.ocr_calls += 1
-        fut = self.ocr_pool.submit(ocrmod.ocr_line, crop_arr.copy(), 3, ocrmod.WL if is_hud else None)
+        fut = self.ocr_pool.submit(ocrmod.ocr_line_robust, crop_arr.copy(), ocrmod.WL if is_hud else None)
         self.ocr_q.append((fut, key, f, frame, name, nb, is_hud))
 
     def poll_ocr(self, wait=False):

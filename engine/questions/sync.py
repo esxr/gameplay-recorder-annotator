@@ -61,8 +61,21 @@ def decode_video(video):
             print(f"decode_sync.py failed ({e}); using built-in decoder", file=sys.stderr)
     p = _probe(video)
     W, H = int(p["width"]), int(p["height"])
-    # video is a crop of exactly the 1280x720 canvas (testgame/decode_sync.py): barcode at (0,0), scale W/1280
-    x0, y0, s = 0, 0, W / 1280.0
+    # canvas is 1280 px wide scaled to video width; it may sit below a window title bar -> find y offset
+    s = W / 1280.0
+    img = _frame0(video, W, H).astype(int)
+    bw = int(196 * s)
+    def grayrow(y):
+        return (np.abs(img[y, :bw] - 128).max(axis=1) <= 12).mean() >= 0.9
+    y0 = None
+    for y in range(0, min(H - int(20 * s), 81)):
+        if grayrow(y) and grayrow(y + int(17 * s)) and not grayrow(y + int(10 * s)):
+            y0 = y
+            break
+    if y0 is None:
+        raise RuntimeError("sync barcode not found in top 80 px")
+    x0 = 0
+    print(f"sync: barcode at y0={y0} scale={s:.3f}", file=sys.stderr)
     cw, ch = int(200 * s) + 2, int(20 * s) + 2
     cw += cw % 2
     ch += ch % 2

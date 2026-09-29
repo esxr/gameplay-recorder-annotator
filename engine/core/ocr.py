@@ -118,3 +118,16 @@ def hud_key(text):
         if re.search(r"\b" + k + r"\b", t):
             return "health" if k == "hp" else k
     return None
+
+
+def ocr_line_robust(arr, whitelist=None):
+    """Pad + multi-scale vote (scales 4,3, then 2 as tie-break) — guards against scale-specific misreads."""
+    if arr.size == 0:
+        return ""
+    pad = np.pad(arr, ((6, 6), (8, 8), (0, 0)), mode="edge")
+    a = ocr_line(pad, 4, whitelist)
+    b = ocr_line(pad, 3, whitelist)
+    if a == b:
+        return a
+    c = ocr_line(pad, 2, whitelist)
+    return b if b == c else a

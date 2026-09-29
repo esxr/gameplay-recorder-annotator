@@ -1,0 +1,142 @@
+{
+ "created_at": "2026-09-30T04:02:58+10:00",
+ "truth": "testgame/out/truth.jsonl",
+ "truth_sha256_16": "475dd4d982df78ee",
+ "video": "/Users/pranav/Desktop/gameplay_recorder_annotator/testgame/out/session.mp4",
+ "video_frames": 4580,
+ "fps": 60.0,
+ "note": "answers derived only from truth.jsonl + barcode video->gf map; written before any LLM answering",
+ "questions": [
+  {
+   "id": "q1",
+   "type": "frame",
+   "tol": 2,
+   "q": "Exactly which video frame first shows four enemies visible on screen at the same time?",
+   "answer": 1704
+  },
+  {
+   "id": "q2",
+   "type": "number",
+   "tol": 0,
+   "q": "How many enemies were visible in the frame just before the ammo value first decreased?",
+   "answer": 3,
+   "aux": {
+    "ammo_drop_f": 294
+   }
+  },
+  {
+   "id": "q3",
+   "type": "number",
+   "tol": 0,
+   "q": "How much health was lost between the first shot (first ammo decrease) and the fourth shot (fourth ammo decrease)?",
+   "answer": 7,
+   "aux": {
+    "shots": [
+     294,
+     421,
+     554,
+     692
+    ]
+   }
+  },
+  {
+   "id": "q4",
+   "type": "choice",
+   "choices": [
+    "before",
+    "after"
+   ],
+   "q": "Did the ammo value first decrease before or after the first screen flash? Answer 'before' or 'after'.",
+   "answer": "before"
+  },
+  {
+   "id": "q5",
+   "type": "text_pair",
+   "q": "What did the objective text change from and to?",
+   "answer": [
+    "Reach the gate",
+    "Defend the core"
+   ],
+   "aux": {
+    "f": 2304
+   }
+  },
+  {
+   "id": "q6",
+   "type": "frame",
+   "tol": 2,
+   "q": "At which video frame did the first flash that lasted exactly one frame occur?",
+   "answer": 521
+  },
+  {
+   "id": "q7",
+   "type": "frame",
+   "tol": 2,
+   "q": "Around frame 534 an enemy disappears behind the grey cover pillar (visible enemy count drops). Was it seen again, and at which frame did it first reappear? Answer with the reappearance frame.",
+   "answer": 565,
+   "aux": {
+    "disappear_f": 534,
+    "truth_id": 2
+   }
+  },
+  {
+   "id": "q8",
+   "type": "number",
+   "tol": 0,
+   "q": "What was the score shown at video frame 2400 (t = 40.00 s)?",
+   "answer": 850
+  },
+  {
+   "id": "q9",
+   "type": "number",
+   "tol": 0,
+   "q": "How many separate screen flashes occurred in the whole video?",
+   "answer": 10,
+   "aux": {
+    "runs": [
+     [
+      521
+     ],
+     [
+      815,
+      816
+     ],
+     [
+      1157
+     ],
+     [
+      1481,
+      1482
+     ],
+     [
+      1793
+     ],
+     [
+      2417
+     ],
+     [
+      2735
+     ],
+     [
+      3071,
+      3072
+     ],
+     [
+      3595
+     ],
+     [
+      3917,
+      3918
+     ]
+    ]
+   }
+  },
+  {
+   "id": "q10",
+   "type": "number",
+   "tol": 0,
+   "q": "How many enemies were visible at video frame 1200 (t = 20.00 s)?",
+   "answer": 3
+  }
+ ]
+}
