@@ -121,16 +121,19 @@ def hud_key(text):
 
 
 def ocr_line_robust(arr, whitelist=None):
-    """Pad + multi-scale vote (scales 4,3, then 2 as tie-break) — guards against scale-specific misreads."""
+    """Pad + multi-scale vote: two reads (scales 4, 3) must agree; otherwise majority over 5 scales.
+    Two identical independent reads are required before a value is trusted."""
     if arr.size == 0:
         return ""
     pad = np.pad(arr, ((6, 6), (8, 8), (0, 0)), mode="edge")
-    a = ocr_line(pad, 4, whitelist)
-    b = ocr_line(pad, 3, whitelist)
-    if a == b:
-        return a
-    c = ocr_line(pad, 2, whitelist)
-    return b if b == c else a
+    reads = [ocr_line(pad, 4, whitelist), ocr_line(pad, 3, whitelist)]
+    if reads[0] == reads[1]:
+        return reads[0]
+    for sc in (5, 2.5, 3.5):
+        reads.append(ocr_line(pad, sc, whitelist))
+    from collections import Counter
+    best, n = Counter(r for r in reads if r).most_common(1)[0] if any(reads) else ("", 0)
+    return best if n >= 2 else ""
 
 
 def ocr_line_confirm(arr, whitelist=None):

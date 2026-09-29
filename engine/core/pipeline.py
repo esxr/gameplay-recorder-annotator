@@ -329,9 +329,6 @@ class Engine:
                     self.state["hud"][name] = field(val, 0.9, "observed", f, nb, crop)
                     self.backpatch("hud", name, self.state["hud"][name], f)
                     return
-                self.hud_cand[name] = (val, f, 0)
-                self.revalidate_box(f, frame, name, nb, True, confirm=True)
-                return
             if old is not None and old["v"] == val:
                 return
             crop = self.crop_save(frame, nb, f, f"hud_{name}")
@@ -592,7 +589,7 @@ class Engine:
                 fg &= ~self.ui_mask
                 bl = blobs(fg)
                 hh, ww = fg.shape
-                bl = [b for b in bl if (b[2] - b[0]) < 0.5 * ww and (b[3] - b[1]) < 0.5 * hh]
+                bl = [b for b in bl if 3 <= (b[2] - b[0]) < 0.5 * ww and 3 <= (b[3] - b[1]) < 0.5 * hh]  # thin lines/chrome are not entities
                 dets = [np.array([b[0] / ww, b[1] / hh, (b[2] - b[0]) / ww, (b[3] - b[1]) / hh]) for b in bl]
                 sigs = []
                 for b in bl:
