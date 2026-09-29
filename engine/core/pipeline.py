@@ -162,7 +162,8 @@ class Engine:
         self.n_written = 0
         self.stored_bytes = 0
         self.flashes = []            # (start, end)
-        self.hud_cand = {}           # name -> (value, f) awaiting confirmation
+        self.hud_cand = {}
+        self.ocr_retry = {}           # name -> (value, f) awaiting confirmation
         self.ocr_done = []
         from concurrent.futures import ThreadPoolExecutor
         self.ocr_pool = ThreadPoolExecutor(max_workers=6)
@@ -284,7 +285,7 @@ class Engine:
                 return
             self.ocr_calls += 1
             fn = ocrmod.ocr_line_confirm if confirm else ocrmod.ocr_line_robust
-            fut = self.ocr_pool.submit(fn, crop_arr.copy(), ocrmod.WL if is_hud else None)
+            fut = self.ocr_pool.submit(fn, crop_arr.copy(), ocrmod.WL if is_hud else None, self.ocr_retry.get(name, 0))
         self.ocr_q.append((fut, key, f, frame, name, nb, is_hud))
 
     def poll_ocr(self, wait=False, wait_one=False):
@@ -319,7 +320,14 @@ class Engine:
                 val, f = cand[0], cand[1]
             else:
                 if not vals:
+                    # unreadable → forget this checksum and force a re-read on the next frames (bounded retries)
+                    n = self.ocr_retry.get(name, 0)
+                    if n < 6:
+                        self.ocr_retry[name] = n + 1
+                        self.box_last.pop(name, None)
+                        self.ocr_cache = {k: v for k, v in self.ocr_cache.items() if k[0] != name or ocrmod.parse_hud(v)}
                     return
+                self.ocr_retry[name] = 0
                 val = vals[0]
                 if old is not None and old["v"] == val:
                     self.hud_cand.pop(name, None)

@@ -5,4 +5,4 @@ mode histogram (region-frames): COPY=209093 (95.1%)  PROPAGATE=3937 (1.8%)  REVA
 all 5 modes > 0: PASS   rows with modes!=48 chars: 0
 COPY+PROPAGATE+REVALIDATE = 99.58%  (>=70%: PASS)
 VLM frames = 21/4580 = 0.46%  (<=5%: PASS)
-snapshots=19 deltas=4561 empty deltas=1828
+snapshots=19 deltas=4561 empty deltas=1827

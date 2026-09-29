@@ -120,12 +120,14 @@ def hud_key(text):
     return None
 
 
-def ocr_line_robust(arr, whitelist=None):
+def ocr_line_robust(arr, whitelist=None, attempt=0):
     """Pad + multi-scale vote: two reads (scales 4, 3) must agree; otherwise majority over 5 scales.
     Two identical independent reads are required before a value is trusted."""
     if arr.size == 0:
         return ""
     pad = np.pad(arr, ((6, 6), (8, 8), (0, 0)), mode="edge")
+    if attempt % 2 == 1:                       # retry: invert (dark text on light) for a different binarisation
+        pad = 255 - pad
     reads = [ocr_line(pad, 4, whitelist), ocr_line(pad, 3, whitelist)]
     if reads[0] == reads[1]:
         return reads[0]
@@ -136,7 +138,7 @@ def ocr_line_robust(arr, whitelist=None):
     return best if n >= 2 else ""
 
 
-def ocr_line_confirm(arr, whitelist=None):
+def ocr_line_confirm(arr, whitelist=None, attempt=0):
     """Independent confirmation read (different scales/padding than ocr_line_robust)."""
     if arr.size == 0:
         return ""

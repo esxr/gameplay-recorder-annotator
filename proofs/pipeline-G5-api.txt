@@ -1,32 +1,32 @@
-$ curl -s 'http://127.0.0.1:8765/get_state?session=/private/tmp/claude-501/-Users-pranav-Desktop-gameplay-recorder-annotator/93f67c4f-ca5c-4a83-aaf2-6fbbe0e6f470/scratchpad/g8&f=2290'
-HTTP 200  bytes=4469
-{"scene": {"label": {"v": "unknown", "conf": 0.5, "source": "inferred", "f": 0, "bbox": [0.0, 0.0, 1.0, 1.0], "crop": "evidence/f0_scene.jpg"}, "id": "s1"}, "entities": {"e3": {"type": {"v": "object", "conf": 0.4, "source": "inferred", "f": 214, "bbox": [0.3187, 0.3191, 0.05, 0.0851], "crop": "evide
+$ curl -s 'http://127.0.0.1:8765/get_state?session=/Users/pranav/Movies/GameplayRecorder/Recording%202026-09-30%2003.58.26.mp4.session&f=2290'
+HTTP 200  bytes=3858
+{"scene": {"label": {"v": "Game level with gate", "conf": 0.8, "source": "inferred", "f": 0, "bbox": [0.0, 0.0, 1.0, 1.0], "crop": "evidence/f0_scene.jpg"}, "id": "s1"}, "entities": {"e3": {"type": {"v": "ui", "conf": 0.8, "source": "inferred", "f": 299, "bbox": [0.1188, 0.6064, 0.0187, 0.0319], "cr
 
-$ curl -s 'http://127.0.0.1:8765/get_changes?session=/private/tmp/claude-501/-Users-pranav-Desktop-gameplay-recorder-annotator/93f67c4f-ca5c-4a83-aaf2-6fbbe0e6f470/scratchpad/g8&f0=2290&f1=2320'
-HTTP 200  bytes=3866
-{"f0": 2290, "f1": 2320, "changes": [{"f": 2290, "delta": {"entities": {"e10": {"bbox": {"v": [0.562, 0.383, 0.056, 0.085]}}}}}, {"f": 2291, "delta": {"entities": {"e10": {"bbox": {"v": [0.569, 0.383, 0.05, 0.085], "conf": 0.81}}}}}, {"f": 2293, "delta": {"entities": {"e10": {"bbox": {"v": [0.575, 0
+$ curl -s 'http://127.0.0.1:8765/get_changes?session=/Users/pranav/Movies/GameplayRecorder/Recording%202026-09-30%2003.58.26.mp4.session&f0=2290&f1=2320'
+HTTP 200  bytes=3373
+{"f0": 2290, "f1": 2320, "changes": [{"f": 2290, "delta": {"entities": {"e7": {"bbox": {"v": [0.562, 0.383, 0.056, 0.085]}}}}}, {"f": 2291, "delta": {"entities": {"e7": {"bbox": {"v": [0.569, 0.383, 0.05, 0.085], "conf": 0.83}}}}}, {"f": 2293, "delta": {"entities": {"e7": {"bbox": {"v": [0.575, 0.38
 
-$ curl -s 'http://127.0.0.1:8765/get_entity_history?session=/private/tmp/claude-501/-Users-pranav-Desktop-gameplay-recorder-annotator/93f67c4f-ca5c-4a83-aaf2-6fbbe0e6f470/scratchpad/g8&entity_id=e1'
-HTTP 200  bytes=3701
-{"entity_id": "e1", "first_f": 222, "last_f": 678, "history": {"type": [{"f": 222, "v": "object", "conf": 0.4, "source": "inferred", "f_obs": 213, "bbox": [0.7312, 0.5745, 0.05, 0.0957], "crop": "evidence/f222_e1.jpg"}], "label": [{"f": 222, "v": "moving object", "conf": 0.4, "source": "inferred", "
+$ curl -s 'http://127.0.0.1:8765/get_entity_history?session=/Users/pranav/Movies/GameplayRecorder/Recording%202026-09-30%2003.58.26.mp4.session&entity_id=e1'
+HTTP 200  bytes=6467
+{"entity_id": "e1", "first_f": 228, "last_f": 1068, "history": {"type": [{"f": 228, "v": "object", "conf": 0.4, "source": "inferred", "f_obs": 219, "bbox": [0.5563, 0.3617, 0.0437, 0.0851], "crop": "evidence/f228_e1.jpg"}, {"f": 278, "v": "item", "conf": 0.8, "source": "inferred", "f_obs": 247, "bbo
 
-$ curl -s 'http://127.0.0.1:8765/get_events?session=/private/tmp/claude-501/-Users-pranav-Desktop-gameplay-recorder-annotator/93f67c4f-ca5c-4a83-aaf2-6fbbe0e6f470/scratchpad/g8&f0=0&f1=4580&type=flash'
-HTTP 200  bytes=2648
-{"count": 10, "events": [{"id": "ev10", "type": "flash", "f_start": 521, "f_end": 521, "t_ms": 8683.33, "duration_frames": 1, "color": [165, 169, 177], "confidence": 0.9, "source": "observed", "evidence": {"f": 521, "bbox": [0.0, 0.0, 1.0, 1.0], "crop": "evidence/f521_flash.jpg"}}, {"id": "ev18", "t
+$ curl -s 'http://127.0.0.1:8765/get_events?session=/Users/pranav/Movies/GameplayRecorder/Recording%202026-09-30%2003.58.26.mp4.session&f0=0&f1=4580&type=flash'
+HTTP 200  bytes=2646
+{"count": 10, "events": [{"id": "ev9", "type": "flash", "f_start": 521, "f_end": 521, "t_ms": 8683.33, "duration_frames": 1, "color": [165, 169, 177], "confidence": 0.9, "source": "observed", "evidence": {"f": 521, "bbox": [0.0, 0.0, 1.0, 1.0], "crop": "evidence/f521_flash.jpg"}}, {"id": "ev17", "ty
 
-$ curl -s 'http://127.0.0.1:8765/search_semantics?session=/private/tmp/claude-501/-Users-pranav-Desktop-gameplay-recorder-annotator/93f67c4f-ca5c-4a83-aaf2-6fbbe0e6f470/scratchpad/g8&query=objective'
+$ curl -s 'http://127.0.0.1:8765/search_semantics?session=/Users/pranav/Movies/GameplayRecorder/Recording%202026-09-30%2003.58.26.mp4.session&query=objective'
 HTTP 200  bytes=46
 {"query": "objective", "count": 0, "hits": []}
 
-$ curl -s 'http://127.0.0.1:8765/get_evidence?session=/private/tmp/claude-501/-Users-pranav-Desktop-gameplay-recorder-annotator/93f67c4f-ca5c-4a83-aaf2-6fbbe0e6f470/scratchpad/g8&annotation_id=ev1'
-HTTP 200  bytes=400
-{"id": "ev1", "claim": "f213-f222 t=3.55s entity_created entity=e1 [obs 0.80] id=ev1", "evidence": {"f": 222, "bbox": [0.7312, 0.5745, 0.05, 0.0957], "crop": "evidence/f222_e1.jpg", "crop_abs": "/private/tmp/claude-501/-Users-pranav-Desktop-gameplay-recorder-annotator/93f67c4f-ca5c-4a83-aaf2-6fbbe0e
+$ curl -s 'http://127.0.0.1:8765/get_evidence?session=/Users/pranav/Movies/GameplayRecorder/Recording%202026-09-30%2003.58.26.mp4.session&annotation_id=ev1'
+HTTP 200  bytes=357
+{"id": "ev1", "claim": "f219-f228 t=3.65s entity_created entity=e1 [obs 0.80] id=ev1", "evidence": {"f": 228, "bbox": [0.5563, 0.3617, 0.0437, 0.0851], "crop": "evidence/f228_e1.jpg", "crop_abs": "/Users/pranav/Movies/GameplayRecorder/Recording 2026-09-30 03.58.26.mp4.session/evidence/f228_e1.jpg", 
 
-$ curl -s 'http://127.0.0.1:8765/compile_context?session=/private/tmp/claude-501/-Users-pranav-Desktop-gameplay-recorder-annotator/93f67c4f-ca5c-4a83-aaf2-6fbbe0e6f470/scratchpad/g8&query=how%20many%20flashes%20and%20when%20did%20health%20drop&token_budget=4000'
-HTTP 200  bytes=15600
-{"context": "## HEADER\nSESSION g8: frames 0..4579 at 60 fps (frame f -> time f/60 s). Frame indices are source video frames.\nTags: obs=observed this frame by perception; PROP=propagated from earlier observation (not re-seen; conf decays); INFER=inferred. Number after tag = confidence.\n## HUD VALU
+$ curl -s 'http://127.0.0.1:8765/compile_context?session=/Users/pranav/Movies/GameplayRecorder/Recording%202026-09-30%2003.58.26.mp4.session&query=how%20many%20flashes%20and%20when%20did%20health%20drop&token_budget=4000'
+HTTP 200  bytes=13269
+{"context": "## HEADER\nSESSION Recording 2026-09-30 03.58.26.mp4.session: frames 0..4579 at 60 fps (frame f -> time f/60 s). Frame indices are source video frames.\nTags: obs=observed this frame by perception; PROP=propagated from earlier observation (not re-seen; conf decays); INFER=inferred. Numb
 
-$ curl -s 'http://127.0.0.1:8765/reanalyze?session=/private/tmp/claude-501/-Users-pranav-Desktop-gameplay-recorder-annotator/93f67c4f-ca5c-4a83-aaf2-6fbbe0e6f470/scratchpad/g8&f0=2290&f1=2292&region=0.3,0.0,0.4,0.12&fidelity=high'
+$ curl -s 'http://127.0.0.1:8765/reanalyze?session=/Users/pranav/Movies/GameplayRecorder/Recording%202026-09-30%2003.58.26.mp4.session&f0=2290&f1=2292&region=0.3,0.0,0.4,0.12&fidelity=high'
 HTTP 200  bytes=701
 {"f0": 2290, "f1": 2292, "region": "0.3,0.0,0.4,0.12", "fidelity": "high", "observations": [{"f": 2290, "text": {"v": "Reach the agate", "conf": 0.9, "source": "observed", "f": 2290, "bbox": [0.3, 0.0, 0.4, 0.1196808510638298], "crop": null}, "fidelity": "high", "method": "tesseract_fullres"}, {"f":
 
