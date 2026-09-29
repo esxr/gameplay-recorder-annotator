@@ -66,6 +66,11 @@ final class DraggableRootView: NSView { override var mouseDownCanMoveWindow: Boo
 
     // MARK: Public API
 
+    /// Shows the toolbar in a given mode (used by the automation hook).
+    func show(mode newMode: CaptureMode) { mode = newMode; show() }
+    /// Same as pressing the blue Capture/Record button.
+    func triggerPrimary() { primaryClicked() }
+
     func show() {
         positionPanel()
         NSApp.activate(ignoringOtherApps: true)

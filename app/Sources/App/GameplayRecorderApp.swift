@@ -34,6 +34,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         DistributedNotificationCenter.default().addObserver(forName: .init("com.operantlabs.GameplayRecorder.stop"), object: nil, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated { if self?.recorder.isRecording == true { self?.stopRecording() } }
         }
+        DistributedNotificationCenter.default().addObserver(forName: .init("com.operantlabs.GameplayRecorder.show"), object: nil, queue: .main) { [weak self] n in
+            MainActor.assumeIsolated {
+                guard let self, !self.recorder.isRecording else { return }
+                if let m = (n.object as? String).flatMap(CaptureMode.init(rawValue:)) { self.toolbar.show(mode: m) } else { self.toolbar.show() }
+            }
+        }
+        DistributedNotificationCenter.default().addObserver(forName: .init("com.operantlabs.GameplayRecorder.primary"), object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.toolbar.triggerPrimary() }
+        }
         // `--review <video.mp4>` opens an existing recording without recording.
         let args = CommandLine.arguments
         if let i = args.firstIndex(of: "--review"), i + 1 < args.count {

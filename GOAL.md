@@ -41,4 +41,4 @@ Repo root `/Users/pranav/Desktop/gameplay_recorder_annotator`; app in `app/` (Sw
 - NOT-PROOF: Separate clips stitched together. Unit tests alone.
 
 ## Done when
-G1-G5 PROOFs exist in `proofs/`, all rows in `TODO.md` are done, and Pranav replies "ship".
+G1-G5 PROOFs exist in `proofs/`, all rows in `TODO.md` are done, `GOAL-pipeline.md` G1-G6 are done, and Pranav replies "ship".
