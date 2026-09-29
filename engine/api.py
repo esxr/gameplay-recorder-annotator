@@ -388,9 +388,10 @@ def compile_context(session, query, token_budget=4000):
             tl = s.timelines[("hud", h)]
             items, last_v = [], object()
             for (f, v, conf, src, fo, bb, crop) in tl:
-                if v == last_v and src == "propagated":
+                if v == last_v:
                     continue
-                items.append(f"f{f}={_fmt(v)}" + ("" if src == "observed" else f"({_src_tag(src, conf)})"))
+                fc = fo if isinstance(fo, int) and fo <= f else f  # frame where the value was first observed
+                items.append(f"f{fc}={_fmt(v)}" + ("" if src == "observed" else f"({_src_tag(src, conf)})"))
                 last_v = v
             lines.append(f"hud.{h} value timeline (value holds until next entry): " + " ".join(items))
         sections.append((1 if want["hud"] else 3, "HUD VALUE TIMELINES (exact frames of change)", lines))
@@ -405,7 +406,8 @@ def compile_context(session, query, token_budget=4000):
             for (f, v, conf, src, fo, bb, crop) in tl:
                 if v == last_v:
                     continue
-                items.append(f"f{f}={_fmt(v)}[{_src_tag(src, conf)}]")
+                fc = fo if isinstance(fo, int) and fo <= f else f
+                items.append(f"f{fc}={_fmt(v)}[{_src_tag(src, conf)}]")
                 last_v = v
                 if crop:
                     evidence.append({"f": f, "crop": crop})

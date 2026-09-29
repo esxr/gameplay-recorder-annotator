@@ -19,3 +19,4 @@
 | P3 | Query API (8 ops) + HTTP server + context compiler + /ask + report.py eval + 1 fps baseline | agent-api | engine/api.py, engine/server.py, engine/report.py | code done 03:57 (synthetic session: 20/20 reconstruct, 8/8 HTTP); awaiting valid capture |
 | P4 | App: run engine on stop, stage logs, review window region modes + events + Ask box | agent-appint | app/Sources/Review, app/Sources/Pipeline | done 03:53 (build ok; tested w/ fake session) |
 | P5 | Proofs pipeline-G1..G6 | orchestrator | proofs/ | todo |
+| P6 | Fix static bboxes: per-frame engine entity boxes at playhead (observed/propagated/inferred styles) + 1 fps interpolation fallback | agent-appint | app/Sources/Review | in progress 04:08 (user bug) |

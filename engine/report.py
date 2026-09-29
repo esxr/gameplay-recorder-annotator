@@ -242,8 +242,23 @@ def g3(s, truth, video):
                 good += int(float(v)) == int(r["hud"][name])
             except Exception:
                 pass
-        o(f"HUD {name}: truth changes in video={len(ch)}  engine value correct at change frame: {good}/{len(ch)} "
-          f"= {100 * good / max(1, len(ch)):.1f}%  (>=90%: {'PASS' if len(ch) and good >= 0.9 * len(ch) else 'FAIL'})")
+        # provenance frame: field.f (frame the value was observed) of the timeline entry
+        obs_ok = 0
+        for r in ch:
+            ent = next((t for t in tl if t[4] == r["vf"] or (t[0] == r["vf"])), None)
+            try:
+                obs_ok += ent is not None and int(float(ent[1])) == int(r["hud"][name])
+            except Exception:
+                pass
+        evs = {(e.get("f_start"), str(e.get("to"))) for e in s.events
+               if e.get("type") == "ui_value_changed" and e.get("entity") == f"hud.{name}"}
+        ev_ok = sum(1 for r in ch if (r["vf"], str(r["hud"][name])) in evs)
+        o(f"HUD {name}: truth changes in video={len(ch)}")
+        o(f"   ui_value_changed event at exact frame with correct new value: {ev_ok}/{len(ch)} = {100 * ev_ok / max(1, len(ch)):.1f}%"
+          f"  (>=90%: {'PASS' if len(ch) and ev_ok >= 0.9 * len(ch) else 'FAIL'})")
+        o(f"   state field with provenance frame f == change frame and correct value: {obs_ok}/{len(ch)}")
+        o(f"   state value already correct AT the change frame (get_state(f)): {good}/{len(ch)}"
+          f"  (state commit lag: value written after confirmation, field.f carries the observed frame)")
     uv = [e for e in s.events if e.get("type") == "ui_value_changed"]
     o(f"ui_value_changed events={len(uv)}  event_started-type (flash) events={len(fl)}")
     o.save()

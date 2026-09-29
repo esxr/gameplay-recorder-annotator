@@ -1,23 +1,25 @@
 == G2: snapshot+delta reconstruction; storage; identity ==
-  f=    39 get_state==dense_replay: OK
-  f=    50 get_state==dense_replay: OK
-  f=    60 get_state==dense_replay: OK
-  f=    72 get_state==dense_replay: OK
-  f=    75 get_state==dense_replay: OK
-  f=    89 get_state==dense_replay: OK
-  f=    93 get_state==dense_replay: OK
-  f=    97 get_state==dense_replay: OK
-  f=   155 get_state==dense_replay: OK
-  f=   220 get_state==dense_replay: OK
-  f=   247 get_state==dense_replay: OK
-  f=   333 get_state==dense_replay: OK
-  f=   376 get_state==dense_replay: OK
-  f=   406 get_state==dense_replay: OK
-  f=   430 get_state==dense_replay: OK
-  f=   446 get_state==dense_replay: OK
-  f=   521 get_state==dense_replay: OK
-  f=   550 get_state==dense_replay: OK
-  f=   566 get_state==dense_replay: OK
-  f=   598 get_state==dense_replay: OK
-reconstruct (api fallback replay) vs sequential dense replay: 20/20 (non-snapshot frames)  PASS
-stored bytes (stream+events+summary)=194921  dense per-frame JSON bytes=655154  ratio=3.4x  (>=10x: FAIL)
+  f=   309 get_state==dense_replay: OK
+  f=   397 get_state==dense_replay: OK
+  f=   477 get_state==dense_replay: OK
+  f=   574 get_state==dense_replay: OK
+  f=   595 get_state==dense_replay: OK
+  f=   707 get_state==dense_replay: OK
+  f=   746 get_state==dense_replay: OK
+  f=   774 get_state==dense_replay: OK
+  f=  1240 get_state==dense_replay: OK
+  f=  1764 get_state==dense_replay: OK
+  f=  1978 get_state==dense_replay: OK
+  f=  2661 get_state==dense_replay: OK
+  f=  3006 get_state==dense_replay: OK
+  f=  3246 get_state==dense_replay: OK
+  f=  3439 get_state==dense_replay: OK
+  f=  3491 get_state==dense_replay: OK
+  f=  3566 get_state==dense_replay: OK
+  f=  4172 get_state==dense_replay: OK
+  f=  4407 get_state==dense_replay: OK
+  f=  4533 get_state==dense_replay: OK
+reconstruct (engine.core.replay.reconstruct) vs sequential dense replay: 20/20 (non-snapshot frames)  PASS
+stored bytes (stream+events+summary)=1173559  dense per-frame JSON bytes=21400796  ratio=18.2x  (>=10x: PASS)
+truth->video bbox transform: canvas y offset 32px of 752, scale 1.000
+identity: truth-enemy frame instances=12977 matched(IoU>=0.3)=11707 (90.2%) switches=38 = 0.32% of matches  (<=5%: PASS)

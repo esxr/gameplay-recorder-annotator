@@ -1,0 +1,23 @@
+== G3: short events at exact frame; HUD values; 1 fps baseline ==
+truth flash frames present in video: 10 runs (gf flash frames seen: [317, 611, 612, 953, 1277, 1278, 1589, 2213, 2531, 2867, 2868, 3391, 3713, 3714])
+  truth flash vf=521..521 (len 1): engine event at exact frame: YES  nearest=[521]
+  truth flash vf=815..816 (len 2): engine event at exact frame: YES  nearest=[815]
+  truth flash vf=1157..1157 (len 1): engine event at exact frame: YES  nearest=[1157]
+  truth flash vf=1481..1482 (len 2): engine event at exact frame: YES  nearest=[1481]
+  truth flash vf=1793..1793 (len 1): engine event at exact frame: YES  nearest=[1793]
+  truth flash vf=2417..2417 (len 1): engine event at exact frame: YES  nearest=[2417]
+  truth flash vf=2735..2735 (len 1): engine event at exact frame: YES  nearest=[2735]
+  truth flash vf=3071..3072 (len 2): engine event at exact frame: YES  nearest=[3071]
+  truth flash vf=3595..3595 (len 1): engine event at exact frame: YES  nearest=[3595]
+  truth flash vf=3917..3918 (len 2): engine event at exact frame: YES  nearest=[3917]
+flash exact-frame (±0) matches: 10/10  engine flash events=10  (>=9/10: PASS)
+1 fps baseline (frames round(k*60)): catches 0/10 flashes  (<=3: PASS)
+HUD health: truth changes in video=10
+   ui_value_changed event at exact frame with correct new value: 0/10 = 0.0%  (>=90%: FAIL)
+   state field with provenance frame f == change frame and correct value: 0/10
+   state value already correct AT the change frame (get_state(f)): 0/10  (state commit lag: value written after confirmation, field.f carries the observed frame)
+HUD ammo: truth changes in video=31
+   ui_value_changed event at exact frame with correct new value: 19/31 = 61.3%  (>=90%: FAIL)
+   state field with provenance frame f == change frame and correct value: 19/31
+   state value already correct AT the change frame (get_state(f)): 0/31  (state commit lag: value written after confirmation, field.f carries the observed frame)
+ui_value_changed events=41  event_started-type (flash) events=10

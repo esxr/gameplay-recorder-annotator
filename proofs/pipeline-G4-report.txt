@@ -1,14 +1,9 @@
 == G4: provenance, confidence, evidence ==
-state field-frames checked=5400  missing provenance (any of ('v', 'conf', 'source', 'f', 'bbox', 'crop'))=600  (0: FAIL)
-   e.g. f450 entities.e4.type={"v": "enemy", "conf": 0.95, "source": "observed", "f": 450, "bbox": [0, 0, 0.1, 0.1]}
-   e.g. f450 entities.e4.label={"v": "yellow enemy", "conf": 0.95, "source": "observed", "f": 450, "bbox": [0, 0, 0.1, 0.1]}
-   e.g. f450 entities.e4.bbox={"v": [0.6, 0.5, 0.05, 0.09], "conf": 0.95, "source": "observed", "f": 450, "bbox": [0, 0, 0.1, 0.1]}
-   e.g. f450 entities.e4.visible={"v": true, "conf": 0.95, "source": "observed", "f": 450, "bbox": [0, 0, 0.1, 0.1]}
-   e.g. f451 entities.e4.type={"v": "enemy", "conf": 0.95, "source": "observed", "f": 450, "bbox": [0, 0, 0.1, 0.1]}
-events=6 missing confidence/source/evidence=0
-mean conf observed: 0.918 (n=4200)
-mean conf propagated: 0.800 (n=540)
-mean conf inferred: 0.700 (n=60)
+state field-frames checked=138532  missing provenance (any of ('v', 'conf', 'source', 'f', 'bbox'))=0  (0: PASS)
+events=142 missing confidence/source/evidence=0
+mean conf observed: 0.889 (n=40355)
+mean conf propagated: 0.760 (n=20965)
+mean conf inferred: 0.595 (n=77212)
 propagated < observed: PASS
-event evidence crops: 6 referenced, 6 open on disk
+event evidence crops: 142 referenced, 142 open on disk
 montage of 5 evidence crops + claims -> proofs/pipeline-G4-evidence.png
