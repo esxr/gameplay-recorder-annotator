@@ -156,6 +156,16 @@ def g2(s, truth, video):
     s._dense_bytes = dense_bytes
     if truth and video:
         rows = video_rows(truth, video)
+        # truth boxes are canvas-normalized (1280x720); canvas sits at the bottom of the video (title bar on top)
+        VW = int(s.meta.get("width") or 1280)
+        VH = int(s.meta.get("height") or 720)
+        if not s.meta.get("width"):
+            pr = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries", "stream=width,height",
+                                 "-of", "csv=p=0", video], capture_output=True, text=True).stdout.strip().split(",")
+            VW, VH = int(pr[0]), int(pr[1])
+        sc = VW / 1280.0
+        cy0 = VH - 720 * sc
+        o(f"truth->video bbox transform: canvas y offset {cy0:.0f}px of {VH}, scale {sc:.3f}")
         assign, matches, switches = {}, 0, 0
         want = set(range(min(n, len(rows))))
         for f, st in dense_states(s, want):
@@ -163,7 +173,7 @@ def g2(s, truth, video):
                     if (e.get("visible") or {}).get("v", True) and isinstance((e.get("bbox") or {}).get("v"), list)]
             pairs = []
             for te in rows[f]["enemies"]:
-                tb = (te["x"], te["y"], te["w"], te["h"])
+                tb = (te["x"], (cy0 + te["y"] * 720 * sc) / VH, te["w"], te["h"] * 720 * sc / VH)
                 for eid, e in ents:
                     v = iou(tb, e["bbox"]["v"])
                     if v >= 0.3:

@@ -563,8 +563,9 @@ def _video_for(s):
             return v
     if s.dir.endswith(".session"):
         v = s.dir[: -len(".session")]
-        if os.path.exists(v):
-            return v
+        for cand in (v, v + ".mp4", v + ".mov"):
+            if os.path.isfile(cand):
+                return cand
     return None
 
 
