@@ -51,6 +51,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 Task { @MainActor in await self.startRecording(req) }
             }
         }
+        // `grctl recordwin <CGWindowID>` records one window without focus or toolbar.
+        DistributedNotificationCenter.default().addObserver(forName: .init("com.operantlabs.GameplayRecorder.recordwin"), object: nil, queue: .main) { [weak self] n in
+            MainActor.assumeIsolated {
+                guard let self, !self.recorder.isRecording, let screen = NSScreen.main,
+                      let wid = (n.object as? String).flatMap({ UInt32($0) }) else { return }
+                var req = RecordingRequest(mode: .recordSelectedWindow, screen: screen, rect: nil)
+                req.windowID = wid
+                AppLog.log("record_requested", ["mode": "recordSelectedWindow", "window_id": wid, "via": "automation"])
+                Task { @MainActor in await self.startRecording(req) }
+            }
+        }
         DistributedNotificationCenter.default().addObserver(forName: .init("com.operantlabs.GameplayRecorder.primary"), object: nil, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated { self?.toolbar.triggerPrimary() }
         }

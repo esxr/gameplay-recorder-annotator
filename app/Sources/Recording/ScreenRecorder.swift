@@ -49,13 +49,19 @@ final class ScreenRecorder: ScreenRecording {
         // Exclude this app's own windows (toolbar, selection overlay, menu bar item windows).
         let pid = ProcessInfo.processInfo.processIdentifier
         let ownApps = content.applications.filter { $0.processID == pid }
-        let filter = SCContentFilter(display: display, excludingApplications: ownApps, exceptingWindows: [])
+        var filter = SCContentFilter(display: display, excludingApplications: ownApps, exceptingWindows: [])
 
         let scale = request.screen.backingScaleFactor
         let config = SCStreamConfiguration()
         var pixelW: Int
         var pixelH: Int
-        if let rect = request.rect, request.mode == .recordSelectedPortion || rect.width > 0 {
+        if let wid = request.windowID {
+            // Single-window capture: independent of focus, screen and occlusion. Recorded at 1x points.
+            guard let win = content.windows.first(where: { $0.windowID == wid }) else { throw ScreenRecorderError.displayNotFound }
+            filter = SCContentFilter(desktopIndependentWindow: win)
+            pixelW = Int(win.frame.width.rounded())
+            pixelH = Int(win.frame.height.rounded())
+        } else if let rect = request.rect, request.mode == .recordSelectedPortion || rect.width > 0 {
             // Global AppKit coords (bottom-left origin) -> display-local top-left points.
             let sf = request.screen.frame
             var local = CGRect(x: rect.minX - sf.minX,

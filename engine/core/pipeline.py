@@ -88,6 +88,7 @@ class Track:
         self.hidden_since = None
         self.moved = 0.0
         self._vlm = False
+        self.anchor_bb = [float(v) for v in bbox]
 
 
 def cells_of(bbox):
@@ -97,7 +98,7 @@ def cells_of(bbox):
     return [r * GX + c for r in range(r0, r1 + 1) for c in range(c0, c1 + 1)]
 
 
-def blobs(mask, min_area=4, max_blobs=40):
+def blobs(mask, min_area=6, max_blobs=40):
     """Connected components (8-conn) on a small boolean mask → list of (x0,y0,x1,y1,area) in mask px."""
     ys, xs = np.nonzero(mask)
     if len(ys) == 0 or len(ys) > 6000:
@@ -147,6 +148,10 @@ class Engine:
         self.vlm_frames = 0
         self.ocr_calls = 0
         self.ocr_cache = {}
+        self.ocr_q = deque()
+        self.ocr_done = []
+        from concurrent.futures import ThreadPoolExecutor
+        self.ocr_pool = ThreadPoolExecutor(max_workers=6)
         self.fullrefresh_ocr = 0
 
     # ------------------------------------------------------------------ helpers
@@ -246,19 +251,34 @@ class Engine:
         return hashlib.md5(np.packbits(th).tobytes() + str(th.shape).encode()).hexdigest(), frame[y0:y1, x0:x1]
 
     def revalidate_box(self, f, frame, name, nb, is_hud):
-        """REVALIDATE: checksum; OCR only on unseen checksum."""
+        """REVALIDATE: checksum of binarised crop; OCR (async tesseract pool) only on an unseen checksum."""
         sig, crop_arr = self.box_sig(frame, nb)
         if sig is None:
             return
         key = (name, sig)
         if key in self.ocr_cache:
-            txt = self.ocr_cache[key]
-        else:
-            if self.ocr_calls > 400:
-                return
-            self.ocr_calls += 1
-            txt = ocrmod.ocr_line(crop_arr, scale=3)
+            self.ocr_done.append((f, frame, name, nb, is_hud, self.ocr_cache[key]))
+            return
+        if self.ocr_calls > max(300, 0.1 * self.nb) or len(self.ocr_q) > 12:
+            return
+        self.ocr_calls += 1
+        fut = self.ocr_pool.submit(ocrmod.ocr_line, crop_arr.copy(), 3)
+        self.ocr_q.append((fut, key, f, frame, name, nb, is_hud))
+
+    def poll_ocr(self, wait=False):
+        while self.ocr_q and (wait or self.ocr_q[0][0].done()):
+            fut, key, f0, fr0, name, nb, is_hud = self.ocr_q.popleft()
+            try:
+                txt = fut.result()
+            except Exception:
+                txt = ""
             self.ocr_cache[key] = txt
+            self.ocr_done.append((f0, fr0, name, nb, is_hud, txt))
+        done, self.ocr_done = self.ocr_done, []
+        for f, frame, name, nb, is_hud, txt in done:
+            self.apply_ocr(f, frame, name, nb, is_hud, txt)
+
+    def apply_ocr(self, f, frame, name, nb, is_hud, txt):
         if is_hud:
             vals = [v for k, v in ocrmod.parse_hud(txt) if k == name]
             if not vals:
@@ -334,6 +354,7 @@ class Engine:
         self.scene_id_at = {}
         self.reg_conf = np.ones(NREG)
         self.box_last = {}
+        self.last_F = -10 ** 9
         prev_state = None
         stream = open(os.path.join(self.out, "stream.jsonl"), "w")
         buf = deque()
@@ -402,7 +423,7 @@ class Engine:
                             ok2, fr2 = back(look[1])
                             if ok2:
                                 k = 2
-                            elif frac >= CUT_FRAC and fr1 >= CUT_FRAC and fr2 >= CUT_FRAC:
+                            elif frac >= CUT_FRAC and fr1 >= CUT_FRAC and fr2 >= CUT_FRAC and f - self.last_F > 30:
                                 is_F = True
                     if k:
                         flash_until = f + k - 1
@@ -461,6 +482,7 @@ class Engine:
                             t.hidden_since = None
                             t.anchor_f, t.anchor_conf = f, 0.9
                             t.crop = self.crop_save(frame, d, f, t.id)
+                            t.anchor_bb = [float(v) for v in d]
                         if float(np.hypot(*(nc - oc))) > 1e-3:
                             explained.update(cells_of(old)); explained.update(cells_of(d))
                 for di, d in enumerate(dets):
@@ -477,6 +499,7 @@ class Engine:
                         t.anchor_f, t.anchor_conf = f, 0.9
                         t.crop = self.crop_save(frame, t.bbox, f, t.id)
                         t.label_crop = t.crop
+                        t.anchor_bb = [float(v) for v in t.bbox]
                         t.label = "moving object" if t.moved > 0.01 else "object"
                         self.tracks[t.id] = t
                         self.event("entity_created", t.first, f, 0.8, "observed", f, t.bbox, t.crop, entity=t.id)
@@ -536,8 +559,10 @@ class Engine:
                         reinfer_regions.append(c)
                         t.anchor_f, t.anchor_conf = f, 0.9
                         t.crop = self.crop_save(frame, t.bbox, f, t.id)
+                        t.anchor_bb = [float(v) for v in t.bbox]
             vlm_this = False
             if is_F:
+                self.last_F = f
                 self.scene_n += 1
                 sid = f"s{self.scene_n}"
                 self.state["scene"]["id"] = sid
@@ -603,6 +628,7 @@ class Engine:
                             self.revalidate_box(f, frame, name[5:], nb, False)
                         else:
                             self.revalidate_box(f, frame, name, nb, True)
+            self.poll_ocr()
             self.poll_vlm(f)
             ents = {}
             for t in self.tracks.values():
@@ -610,13 +636,13 @@ class Engine:
                 if t.hidden_since is None:
                     conf = t.anchor_conf * DECAY_P ** (f - t.anchor_f)
                     src = "observed" if t.anchor_f == f else "propagated"
-                    vis = field(True, 0.9, "observed", t.last_seen, bb, t.crop)
+                    vis = field(True, 0.9, "observed", t.anchor_f, t.anchor_bb, t.crop)
                 else:
                     conf = 0.5 * DECAY_P ** (f - t.hidden_since)
                     src = "inferred"
-                    vis = field(False, conf, "inferred", t.hidden_since, bb, t.crop)
-                ents[t.id] = {"type": field(t.type, t.label_conf, t.label_src, t.label_f, bb, t.label_crop),
-                              "label": field(t.label, t.label_conf, t.label_src, t.label_f, bb, t.label_crop),
+                    vis = field(False, 0.5, "inferred", t.hidden_since, t.anchor_bb, t.crop)
+                ents[t.id] = {"type": field(t.type, t.label_conf, t.label_src, t.label_f, t.anchor_bb, t.label_crop),
+                              "label": field(t.label, t.label_conf, t.label_src, t.label_f, t.anchor_bb, t.label_crop),
                               "bbox": field(bb, conf, src, t.anchor_f, bb, t.crop),
                               "visible": vis}
             self.state["entities"] = ents
@@ -660,6 +686,8 @@ class Engine:
 
         # drain pending VLM results into a final state note (not re-written into stream; recorded in summary)
         late = len(self.pending)
+        self.poll_ocr(wait=True)          # late OCR results still yield exact-frame events
+        self.ocr_pool.shutdown(wait=False)
         stream.close()
         if self.vlm:
             self.vlm.shutdown()

@@ -18,6 +18,8 @@ struct RecordingRequest {
     var rect: CGRect?
     var captureMicrophone: Bool = false
     var showMouseClicks: Bool = true
+    /// If set, record this single window (captured even when covered by other windows).
+    var windowID: CGWindowID? = nil
 }
 
 /// One annotation line in `<video>.annotations.jsonl`. Fields follow knowledge/wiki/concepts/semantic-annotation-taxonomy.md.
