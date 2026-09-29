@@ -29,3 +29,4 @@ scratch/tools/*
 __pycache__/
 *.pyc
 *.session/
+!proofs/pipeline-*.png
