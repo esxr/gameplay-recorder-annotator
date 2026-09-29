@@ -1,18 +1,23 @@
 import AppKit
 import WebKit
-// gamehost <url> <x> <y>  — shows the game in a borderless, NON-activating floating panel (1280x720 content)
-// at global AppKit point (x,y) (bottom-left origin). Never activates / steals focus.
+// gamehost <url> <x> <y> — shows the game in an ORDINARY titled, closable, movable window (level .normal)
+// whose 1280x720 content rect sits at global AppKit point (x,y). The window is ordered BEHIND other windows
+// (orderBack) and the app never activates. Prints "window_id=<CGWindowID>" to stdout. Cmd+W / close ends it.
 let a = CommandLine.arguments
 let url = URL(string: a.count > 1 ? a[1] : "http://127.0.0.1:8777/")!
 let x = a.count > 2 ? Double(a[2])! : 100, y = a.count > 3 ? Double(a[3])! : 297
+final class Del: NSObject, NSApplicationDelegate, NSWindowDelegate {
+  func applicationShouldTerminateAfterLastWindowClosed(_ s: NSApplication) -> Bool { true }
+}
 let app = NSApplication.shared
-app.setActivationPolicy(.accessory)
-let panel = NSPanel(contentRect: NSRect(x: x, y: y, width: 1280, height: 720),
-                    styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
-panel.level = .floating
-panel.hidesOnDeactivate = false
-panel.isReleasedWhenClosed = false
-panel.collectionBehavior = [.canJoinAllSpaces, .stationary]
+app.setActivationPolicy(.accessory)   // no Dock icon, never activates
+let del = Del(); app.delegate = del
+let win = NSWindow(contentRect: NSRect(x: x, y: y, width: 1280, height: 720),
+                   styleMask: [.titled, .closable, .miniaturizable], backing: .buffered, defer: false)
+win.title = "Test Game"
+win.level = .normal
+win.isReleasedWhenClosed = false
+win.delegate = del
 let cfg = WKWebViewConfiguration()
 // macOS Low Power Mode makes WebKit throttle rendering updates (rAF) to 30 fps. Disable that throttling via
 // WebKit's (private) feature flags so the game renders every 60 fps frame.
@@ -31,8 +36,8 @@ if let feats = (WKPreferences.self as AnyObject).perform(NSSelectorFromString("_
   }
 }
 let wv = WKWebView(frame: NSRect(x: 0, y: 0, width: 1280, height: 720), configuration: cfg)
-panel.contentView = wv
+win.contentView = wv
 wv.load(URLRequest(url: url))
-panel.orderFrontRegardless()
-print("panel frame", NSStringFromRect(panel.frame)); fflush(stdout)
+win.orderBack(nil)                    // behind other windows; no makeKey, no activate
+print("window_id=\(win.windowNumber)"); print("content_rect", NSStringFromRect(win.contentRect(forFrameRect: win.frame))); fflush(stdout)
 app.run()

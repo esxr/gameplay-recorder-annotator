@@ -209,17 +209,21 @@ class Engine:
             nb = [x / W, y / H, w / W, h / H]
             k = ocrmod.hud_key(ln["text"])
             vals = ocrmod.parse_hud(ln["text"])
-            if k and vals:
-                for kk, vv in vals:
-                    if kk not in huds:
-                        huds[kk] = (nb, vv, ln["text"])
+            if k:
+                vv = dict(vals).get(k)
+                if k not in huds:
+                    huds[k] = (nb, vv, ln["text"])
             elif sum(c.isalpha() for c in ln["text"]) >= 6 and len(ln["text"].split()) >= 2 and ln["conf"] > 60:
                 texts.append((h, nb, ln["text"]))
         texts.sort(key=lambda t: -t[0])
         for name, (nb, vv, txt) in huds.items():
             # widen box to the right so growing numbers stay inside
-            nb = [max(0, nb[0] - 0.005), max(0, nb[1] - 0.006), min(1 - nb[0], nb[2] * 1.35 + 0.01), nb[3] + 0.012]
+            x0 = max(0.0, nb[0] - 0.5 * nb[2]); x1 = min(1.0, nb[0] + 1.5 * nb[2])
+            nb = [x0, max(0, nb[1] - 0.008), x1 - x0, nb[3] + 0.016]
             self.hud_boxes[name] = nb
+            if vv is None:
+                self.revalidate_box(f, frame, name, nb, True)
+                continue
             crop = self.crop_save(frame, nb, f, f"hud_{name}")
             old = self.state["hud"].get(name)
             if old and old["v"] != vv:
@@ -227,7 +231,8 @@ class Engine:
                            **{"from": old["v"], "to": vv})
             self.state["hud"][name] = field(vv, 0.9, "observed", f, nb, crop)
         for i, (_, nb, txt) in enumerate(texts[:4]):
-            nb = [max(0, nb[0] - 0.005), max(0, nb[1] - 0.006), min(1 - nb[0], nb[2] + 0.01), nb[3] + 0.012]
+            x0 = max(0.0, nb[0] - 0.3 * nb[2]); x1 = min(1.0, nb[0] + 1.3 * nb[2])
+            nb = [x0, max(0, nb[1] - 0.008), x1 - x0, nb[3] + 0.016]
             rid = f"t{len(self.text_boxes) + 1}"
             # reuse an existing text region if overlapping
             for k, b in self.text_boxes.items():
@@ -440,6 +445,10 @@ class Engine:
             new_cells = set()
             if is_F:
                 bg = sm.astype(np.float32)
+                med = vid.sample_median(self.video, f / self.fps, 10.0, sm.shape[1], sm.shape[0])
+                if med is not None and med.shape == bg.shape:
+                    bg = med
+
             elif not in_flash:
                 dist = np.abs(sm.astype(np.float32) - bg).sum(axis=2)
                 fg = dist > FG_T
@@ -448,7 +457,7 @@ class Engine:
                 dets = [np.array([b[0] / ww, b[1] / hh, (b[2] - b[0]) / ww, (b[3] - b[1]) / hh]) for b in bl
                         if (b[2] - b[0]) < 0.5 * ww and (b[3] - b[1]) < 0.5 * hh]
                 # update background: fast where background, slow where foreground
-                a = np.where(fg, 0.02, 0.15)[..., None].astype(np.float32)
+                a = np.where(fg, 0.004, 0.15)[..., None].astype(np.float32)
                 bg += a * (sm - bg)
                 # match
                 cand = []

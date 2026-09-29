@@ -31,15 +31,28 @@ def ocr_line(arr, scale=3, whitelist=None):
         return ""
 
 
-def ocr_lines_full(png_path):
-    """Full-frame tesseract TSV → list of lines {text, box:[x,y,w,h] px, conf, words}."""
+def _tsv(png_bytes, psm):
     try:
-        r = subprocess.run(["tesseract", png_path, "stdout", "--psm", "11", "tsv"], capture_output=True, timeout=60)
+        r = subprocess.run(["tesseract", "stdin", "stdout", "--psm", str(psm), "tsv"], input=png_bytes,
+                           capture_output=True, timeout=60)
+        return r.stdout.decode("utf-8", "ignore").splitlines()[1:]
     except Exception:
         return []
-    rows = r.stdout.decode("utf-8", "ignore").splitlines()
+
+
+def ocr_lines_full(png_path):
+    """Full-frame tesseract TSV (psm 11 + psm 3, gray, upscaled if small) → lines {text, box px, conf}."""
+    im = Image.open(png_path).convert("L")
+    sc = 2.0 if im.width < 2000 else 1.0
+    if sc != 1.0:
+        im = im.resize((int(im.width * sc), int(im.height * sc)), Image.BICUBIC)
+    b = io.BytesIO(); im.save(b, "PNG"); pb = b.getvalue()
+    from concurrent.futures import ThreadPoolExecutor
+    with ThreadPoolExecutor(2) as ex:
+        rows = sum(ex.map(lambda ps: _tsv(pb, ps), [11, 3]), [])
     words = []
-    for row in rows[1:]:
+    seen = set()
+    for row in rows:
         c = row.split("\t")
         if len(c) < 12 or not c[11].strip():
             continue
@@ -49,7 +62,11 @@ def ocr_lines_full(png_path):
             continue
         if conf < 40:
             continue
-        x, y, w, h = map(int, c[6:10])
+        x, y, w, h = (int(int(v) / sc) for v in c[6:10])
+        kk = (c[11].strip(), x // 8, y // 8)
+        if kk in seen:
+            continue
+        seen.add(kk)
         words.append({"t": c[11].strip(), "x": x, "y": y, "w": w, "h": h, "conf": conf})
     # group words into lines by vertical overlap and horizontal proximity
     words.sort(key=lambda w: (w["y"], w["x"]))
@@ -82,6 +99,7 @@ NUM_RE = re.compile(r"-?\d+")
 def parse_hud(text):
     """'HEALTH: 87' → ('health', 87); returns list of (key, int)."""
     t = text.lower().replace("|", " ").replace(":", " ")
+    t = re.sub(r"(?<=[\s\d])[o@](?=[\d\s]|$)", "0", t)
     res = []
     toks = re.findall(r"[a-z]+|-?\d+", t)
     for i, tok in enumerate(toks):

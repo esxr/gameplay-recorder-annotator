@@ -45,3 +45,16 @@ def extract_full(path, t_sec, out_png):
     subprocess.run(["ffmpeg", "-v", "error", "-nostdin", "-y", "-ss", f"{max(0.0, t_sec):.4f}", "-i", path,
                     "-frames:v", "1", out_png], check=False)
     return out_png
+
+
+def sample_median(path, t_start, span_s, w, h, n=25):
+    """Median of ~n frames sampled over [t_start, t_start+span_s] at (w,h) → background model init."""
+    step = max(span_s / n, 0.05)
+    p = subprocess.run(["ffmpeg", "-v", "error", "-nostdin", "-ss", f"{max(0.0, t_start):.3f}", "-t", f"{span_s:.3f}",
+                        "-i", path, "-vf", f"fps={1.0 / step:.4f},scale={w}:{h}:flags=area", "-f", "rawvideo",
+                        "-pix_fmt", "rgb24", "-"], capture_output=True)
+    n_fr = len(p.stdout) // (w * h * 3)
+    if n_fr < 3:
+        return None
+    arr = np.frombuffer(p.stdout[:n_fr * w * h * 3], np.uint8).reshape(n_fr, h, w, 3)
+    return np.median(arr, axis=0).astype(np.float32)
