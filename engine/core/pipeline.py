@@ -34,6 +34,7 @@ DECAY_P = 0.995              # per-frame decay of propagated fields
 CONF_REINFER = 0.55
 HIDE_FRAMES_S = 2.0
 SNAP_EVERY = 300
+EMIT_MOVE = 0.006             # min normalized bbox move before a propagated bbox is re-emitted
 
 
 def rnd(x, n=4):
@@ -308,6 +309,15 @@ class Engine:
                                **{"from": old["v"], "to": txt})
                 self.state["text"][name] = field(txt, 0.85, "observed", f, nb, crop)
 
+    def bbox_field(self, t, f, bb, conf, src):
+        """Re-emit an entity's bbox field only when it moved > EMIT_MOVE (or provenance changed) → small deltas."""
+        last = getattr(t, "_emit", None)
+        if last is not None and last["source"] == src and last["f"] == t.anchor_f and \
+                max(abs(a - b) for a, b in zip(last["v"], bb)) < EMIT_MOVE:
+            return last
+        t._emit = field([rnd(v, 3) for v in bb], conf, src, t.anchor_f, t.anchor_bb, t.crop)
+        return t._emit
+
     # ------------------------------------------------------------------ VLM
     def vlm_budget_ok(self, f):
         if not self.vlm:
@@ -445,13 +455,16 @@ class Engine:
             new_cells = set()
             if is_F:
                 bg = sm.astype(np.float32)
-                med = vid.sample_median(self.video, f / self.fps, 10.0, sm.shape[1], sm.shape[0])
+                med = vid.sample_median(self.video, f / self.fps, 10.0, W, H, sub=SUB)
                 if med is not None and med.shape == bg.shape:
                     bg = med
-
             elif not in_flash:
                 dist = np.abs(sm.astype(np.float32) - bg).sum(axis=2)
                 fg = dist > FG_T
+                hh, ww = fg.shape
+                for nb in list(self.hud_boxes.values()) + list(self.text_boxes.values()):
+                    x0, y0, x1, y1 = self.box_px(nb, hh, ww)
+                    fg[y0:y1 + 1, x0:x1 + 1] = False
                 bl = blobs(fg)
                 hh, ww = fg.shape
                 dets = [np.array([b[0] / ww, b[1] / hh, (b[2] - b[0]) / ww, (b[3] - b[1]) / hh]) for b in bl
@@ -652,7 +665,7 @@ class Engine:
                     vis = field(False, 0.5, "inferred", t.hidden_since, t.anchor_bb, t.crop)
                 ents[t.id] = {"type": field(t.type, t.label_conf, t.label_src, t.label_f, t.anchor_bb, t.label_crop),
                               "label": field(t.label, t.label_conf, t.label_src, t.label_f, t.anchor_bb, t.label_crop),
-                              "bbox": field(bb, conf, src, t.anchor_f, bb, t.crop),
+                              "bbox": self.bbox_field(t, f, bb, conf, src),
                               "visible": vis}
             self.state["entities"] = ents
             self.timings["state"] += time.time() - ts
