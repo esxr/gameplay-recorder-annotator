@@ -16,7 +16,7 @@
 | P0 | Contract, .venv (numpy+PIL copied locally; PyPI unreachable), `grctl record x,y,w,h` hook | orchestrator | engine/CONTRACT.md, app/Sources/App | done 03:47 |
 | P1 | Test game + truth.jsonl + recording of it via app (no focus steal) | agent-testgame | testgame/ | done 03:58 (native 60 Hz game, window-ID capture, truth 4201 lines) |
 | P2 | Engine core: decode every frame, 8×6 change analysis, 5-mode scheduler, tracker ids, HUD OCR, flashes, VLM on R/F, snapshot+delta store, evidence | agent-engine | engine/core/, engine/run.py | done 04:31: final report G1-G4 all PASS (ids 43→17, id switches 0.33%, health 10/10, ammo 30/31) |
-| P3 | Query API (8 ops) + HTTP server + context compiler + /ask + report.py eval + 1 fps baseline | agent-api | engine/api.py, engine/server.py, engine/report.py | done 04:47: 8/8 HTTP; final report G1-G5 all PASS |
+| P3 | Query API (8 ops) + HTTP server + context compiler + /ask + report.py eval + 1 fps baseline | agent-api | engine/api.py, engine/server.py, engine/report.py | done 04:45: 8/8 HTTP; final report G1-G5 all PASS |
 | P4 | App: run engine on stop, stage logs, review window region modes + events + Ask box | agent-appint | app/Sources/Review, app/Sources/Pipeline | done 03:53 (build ok; tested w/ fake session) |
 | P5 | Proofs pipeline-G1..G6 | orchestrator | proofs/ | done 04:45: pipeline-G1..G6 all PASS (G5 sonnet 9/10) |
 | P6 | Fix static bboxes: per-frame engine entity boxes at playhead (observed/propagated/inferred styles) + 1 fps interpolation fallback | agent-appint | app/Sources/Review | done 04:20 (t10.png: boxes on enemies, per-frame; stray title-bar boxes = engine fix pending) |
