@@ -56,10 +56,12 @@ def diff(a, b):
     for k, v in b.items():
         if k not in a:
             out[k] = v
-        elif isinstance(v, dict) and not is_field(v) and isinstance(a[k], dict):
-            d = diff(a[k], v)
+        elif isinstance(v, dict) and isinstance(a[k], dict) and not (is_field(v) and None in v.values()):
+            d = diff(a[k], v)   # recursive merge-patch (fields patched key-wise; null-valued fields replaced whole)
             if d:
                 out[k] = d
+            elif is_field(v) and set(a[k]) != set(v):
+                out[k] = v
         elif a[k] != v:
             out[k] = v
     for k in a:
@@ -268,7 +270,7 @@ class Engine:
         if self.ocr_calls > max(300, 0.1 * self.nb) or len(self.ocr_q) > 12:
             return
         self.ocr_calls += 1
-        fut = self.ocr_pool.submit(ocrmod.ocr_line, crop_arr.copy(), 3)
+        fut = self.ocr_pool.submit(ocrmod.ocr_line, crop_arr.copy(), 3, ocrmod.WL if is_hud else None)
         self.ocr_q.append((fut, key, f, frame, name, nb, is_hud))
 
     def poll_ocr(self, wait=False):
@@ -328,11 +330,13 @@ class Engine:
     def poll_vlm(self, f, wait=False):
         keep = []
         for fut, kind, payload in self.pending:
-            if not (wait or fut.done()):
+            sf = payload[0] if kind == "scene" else payload[1]
+            # bounded latency: block on results older than 30 frames so labels land in the stream
+            if not (wait or fut.done() or f - sf > 30):
                 keep.append((fut, kind, payload))
                 continue
             try:
-                res = fut.result(timeout=60 if wait else 0)
+                res = fut.result(timeout=60 if (wait or f - sf > 30) else 0)
             except Exception:
                 continue
             if not isinstance(res, dict) or "error" in res:
@@ -534,7 +538,7 @@ class Engine:
                 for tid in list(self.tracks):
                     t = self.tracks[tid]
                     if t.last_seen < f:
-                        if t.hidden_since is None:
+                        if t.hidden_since is None and f - t.last_seen >= 4:   # hysteresis vs 1-3 frame dropouts
                             t.hidden_since = f
                         t.bbox[:2] += t.vel * 0.5
                         t.vel *= 0.5
@@ -640,11 +644,11 @@ class Engine:
             ts = time.time()
             if not in_flash and not is_F and ref is not None:
                 for name, nb in list(self.hud_boxes.items()) + [("text:" + k, v) for k, v in self.text_boxes.items()]:
-                    x0, y0, x1, y1 = self.box_px(nb, sm.shape[0], sm.shape[1])
+                    x0, y0, x1, y1 = self.box_px(nb, H, W)
                     x1 = max(x1, x0 + 1); y1 = max(y1, y0 + 1)
-                    cur = sm[y0:y1, x0:x1]
+                    cur = frame[y0:y1, x0:x1].astype(np.int16)
                     lastv = self.box_last.get(name)
-                    if lastv is None or lastv.shape != cur.shape or float(np.abs(cur - lastv).mean()) > 4.0:
+                    if lastv is None or lastv.shape != cur.shape or float(np.abs(cur - lastv).mean()) > 1.5:
                         self.box_last[name] = cur.copy()
                         if name.startswith("text:"):
                             self.revalidate_box(f, frame, name[5:], nb, False)
@@ -708,6 +712,8 @@ class Engine:
 
         # drain pending VLM results into a final state note (not re-written into stream; recorded in summary)
         late = len(self.pending)
+        for fut, _, _ in self.pending:
+            fut.cancel()
         self.poll_ocr(wait=True)          # late OCR results still yield exact-frame events
         self.ocr_pool.shutdown(wait=False)
         stream.close()

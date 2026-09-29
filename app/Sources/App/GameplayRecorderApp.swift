@@ -72,7 +72,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             openReview(video: v)
         } else if let i = args.firstIndex(of: "--annotate"), i + 1 < args.count {
             annotateThenReview(URL(fileURLWithPath: args[i + 1]))
-        } else {
+        } else if !args.contains("--background") {
             toolbar.show()
         }
     }

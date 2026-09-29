@@ -5,6 +5,7 @@ import subprocess
 import numpy as np
 from PIL import Image
 
+WL = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789:/ "
 HUD_KEYS = ["health", "hp", "ammo", "score", "lives", "life", "time", "level", "gold", "coins", "kills", "shield", "armor"]
 
 
