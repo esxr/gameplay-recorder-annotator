@@ -22,6 +22,8 @@ final class ToolbarPanel: NSPanel {
     override func cancelOperation(_ sender: Any?) { onEscape?() }
 }
 
+final class DraggableRootView: NSView { override var mouseDownCanMoveWindow: Bool { true } }
+
 /// Clone of the macOS Screenshot toolbar (Cmd+Shift+5).
 @MainActor final class CaptureToolbarController: NSObject {
     private let onRecord: (RecordingRequest) -> Void
@@ -84,7 +86,11 @@ final class ToolbarPanel: NSPanel {
     private func buildUI() {
         let bg = ToolbarBackgroundView(frame: NSRect(origin: .zero, size: ToolbarMetrics.size))
         bg.autoresizingMask = [.width, .height]
-        panel.contentView = bg
+        // Controls are siblings of (not inside) the vibrancy view so their colors are not blended.
+        let root = DraggableRootView(frame: bg.frame)
+        root.wantsLayer = true
+        root.addSubview(bg)
+        panel.contentView = root
         let midY = ToolbarMetrics.size.height / 2
 
         let close = NSButton(frame: NSRect(x: ToolbarMetrics.closeCenterX - 11, y: midY - 11, width: 22, height: 22))
@@ -97,7 +103,7 @@ final class ToolbarPanel: NSPanel {
         close.target = self
         close.action = #selector(closeClicked)
         close.setAccessibilityLabel("Close")
-        bg.addSubview(close)
+        root.addSubview(close)
 
         let modes: [(CaptureMode, CGFloat)] = [
             (.captureEntireScreen, ToolbarMetrics.captureCentersX[0]),
@@ -113,11 +119,11 @@ final class ToolbarPanel: NSPanel {
             b.target = self
             b.action = #selector(modeClicked(_:))
             modeButtons.append(b)
-            bg.addSubview(b)
+            root.addSubview(b)
         }
         for x in [ToolbarMetrics.divider1X, ToolbarMetrics.divider2X] {
             let d = DividerView(frame: NSRect(x: x, y: midY - 12, width: 1, height: 24))
-            bg.addSubview(d)
+            root.addSubview(d)
         }
 
         optionsButton.frame = NSRect(x: ToolbarMetrics.optionsCenterX - 33, y: midY - 12, width: 66, height: 24)
@@ -132,11 +138,11 @@ final class ToolbarPanel: NSPanel {
         optionsButton.contentTintColor = NSColor(white: 1, alpha: 0.66)
         optionsButton.target = self
         optionsButton.action = #selector(optionsClicked(_:))
-        bg.addSubview(optionsButton)
+        root.addSubview(optionsButton)
 
         primary.target = self
         primary.action = #selector(primaryClicked)
-        bg.addSubview(primary)
+        root.addSubview(primary)
     }
 
     private func refresh() {

@@ -116,7 +116,7 @@ final class PrimaryButton: NSButton {
     override var title: String { didSet { needsDisplay = true } }
     override func draw(_ dirtyRect: NSRect) {
         let pressed = isHighlighted
-        NSColor(displayP3Red: 27/255, green: 171/255, blue: 1, alpha: 1).blended(withFraction: pressed ? 0.2 : 0, of: .black)!.setFill()
+        (pressed ? NSColor(displayP3Red: 22/255, green: 137/255, blue: 204/255, alpha: 1) : NSColor(displayP3Red: 27/255, green: 171/255, blue: 1, alpha: 1)).setFill()
         NSBezierPath(roundedRect: bounds, xRadius: 9, yRadius: 9).fill()
         let attrs: [NSAttributedString.Key: Any] = [.font: NSFont.systemFont(ofSize: 13, weight: .medium), .foregroundColor: NSColor.white]
         let s = NSAttributedString(string: title, attributes: attrs)
