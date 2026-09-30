@@ -8,7 +8,7 @@ final class OverlayWindow: NSWindow {
         isOpaque = false
         backgroundColor = .clear
         hasShadow = false
-        level = NSWindow.Level(rawValue: NSWindow.Level.screenSaver.rawValue - 1)
+        level = NSWindow.Level(rawValue: NSWindow.Level.popUpMenu.rawValue - 1)
         collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
         ignoresMouseEvents = false
         isReleasedWhenClosed = false

@@ -7,7 +7,7 @@ final class ToolbarPanel: NSPanel {
         super.init(contentRect: NSRect(origin: .zero, size: ToolbarMetrics.size),
                    styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
         isFloatingPanel = true
-        level = .screenSaver
+        level = .popUpMenu  // .screenSaver-level windows are left out of screen captures
         isOpaque = false
         backgroundColor = .clear
         hasShadow = true

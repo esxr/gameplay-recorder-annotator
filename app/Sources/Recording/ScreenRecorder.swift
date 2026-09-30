@@ -132,7 +132,8 @@ final class ScreenRecorder: ScreenRecording {
         try? await stream.stopCapture()
         let frames = try await sink.finish()
         let duration = Double(frames) / 60.0
-        AppLog.log("recording_stopped", ["path": url.path, "duration_s": String(format: "%.2f", duration), "frames": frames])
+        AppLog.log("recording_stopped", ["path": url.path, "duration_s": String(format: "%.2f", duration),
+                                         "frames": frames - sink.droppedSlots, "skipped_slots": sink.droppedSlots])
         return url
     }
 }
@@ -149,7 +150,8 @@ private final class CaptureSink: NSObject, SCStreamOutput, SCStreamDelegate, @un
     private let lock = NSLock()
     private var latest: CVPixelBuffer?          // guarded by lock
     private var startHostTime: CFTimeInterval?  // write queue only
-    private var framesWritten: Int64 = 0        // write queue only
+    private var framesWritten: Int64 = 0        // write queue only; next grid slot index (includes skipped slots)
+    private(set) var droppedSlots: Int64 = 0    // write queue only
     private var timer: DispatchSourceTimer?
     private var finished = false
 
@@ -220,6 +222,11 @@ private final class CaptureSink: NSObject, SCStreamOutput, SCStreamDelegate, @un
         let now = CACurrentMediaTime()
         if startHostTime == nil { startHostTime = now }
         let target = Int64(((now - startHostTime!) * 60.0).rounded(.down)) + 1
+        // Encoder backlog > 0.2 s: skip missed grid slots so video time stays equal to wall-clock time.
+        if target - framesWritten > 12 {
+            droppedSlots += target - 1 - framesWritten
+            framesWritten = target - 1
+        }
         var budget = 8 // avoid long catch-up bursts
         while framesWritten < target && budget > 0 {
             guard input.isReadyForMoreMediaData else { break }
