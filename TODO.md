@@ -8,7 +8,7 @@
 | T3 | Frame extraction (1 fps + scene change) + Claude vision → JSONL (G3) | agent-annotator | Sources/Annotation | done 03:12 (20/20 lines, 100% non-empty) |
 | T4 | Review window: AVPlayer + timeline markers + annotation panel (G4) | agent-review | Sources/Review | done 03:07 (harness: 20 markers = 20 lines) |
 | T5 | Integration: AppDelegate wiring, menu-bar stop item, hotkey | orchestrator | Sources/App | BUILD SUCCEEDED 03:10 |
-| T6 | Proofs G1-G5 in proofs/ + e2e recording | orchestrator | proofs/ | G1 G2 G3 G4 done; G5 build OK, e2e take recording is 58 s (<60 s) — retake needs screen, not done |
+| T6 | Proofs G1-G5 in proofs/ + e2e recording | orchestrator | proofs/ | done 14:15: G1-G5; G5 one take 220 s, recording 71.7 s (proofs/G5-check.txt) |
 
 ## Part 2 — GOAL-pipeline.md (deadline 05:00 AEST)
 | # | Task | Owner | Files | Status |

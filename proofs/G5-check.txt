@@ -1,0 +1,27 @@
+== G5 one-take end-to-end (2026-09-30 14:11 AEST)
+-- build log (build/build.log):
+** BUILD SUCCEEDED **
+errors: 0
+-- proofs/G5-e2e.mp4 (outer screen capture of the whole take, one continuous file):
+codec_name=h264
+width=1728
+height=1118
+duration=220.000000
+-- app recording made in the take: Recording 2026-09-30 14.11.28.mp4
+codec_name=h264
+r_frame_rate=60/1
+avg_frame_rate=23790/539
+nb_frames=3172
+duration=71.666667
+-- app log (toolbar -> record -> stop -> annotate -> review):
+2026-09-30T04:11:17.337Z toolbar_shown frame={{864,102},{547,50}} mode=recordEntireScreen
+2026-09-30T04:11:23.228Z toolbar_shown frame={{864,102},{547,50}} mode=recordEntireScreen
+2026-09-30T04:11:28.226Z record_requested mode=recordEntireScreen rect=nil screen=1
+2026-09-30T04:11:28.464Z recording_started fps=60 height=2234 mode=recordEntireScreen path=/Users/pranav/Movies/GameplayRecorder/Recording 2026-09-30 14.11.28.mp4 width=3456
+2026-09-30T04:12:40.639Z recording_stopped duration_s=71.67 frames=3172 path=/Users/pranav/Movies/GameplayRecorder/Recording 2026-09-30 14.11.28.mp4 skipped_slots=1128
+2026-09-30T04:12:40.644Z annotation_started model=claude-haiku-4-5-20251001 video=/Users/pranav/Movies/GameplayRecorder/Recording 2026-09-30 14.11.28.mp4
+2026-09-30T04:12:40.647Z review_opened annotations=/Users/pranav/Movies/GameplayRecorder/Recording 2026-09-30 14.11.28.annotations.jsonl video=/Users/pranav/Movies/GameplayRecorder/Recording 2026-09-30 14.11.28.mp4
+2026-09-30T04:14:02.539Z engine_finished exit=0 session=/Users/pranav/Movies/GameplayRecorder/Recording 2026-09-30 14.11.28.mp4.session
+-- annotations: 72 records; seconds with gameplay in scene: 62
+-- take timeline (proofs/G5-e2e-frames.png, local): 10s toolbar over game; 20s recording game; 85s review 'Annotating... 0 records'; 100s 3%; 130s 29% with markers
+-- note: under encoder load 1128 of 4300 60 Hz slots were skipped (avg_frame_rate < 60); duration equals wall-clock time.
