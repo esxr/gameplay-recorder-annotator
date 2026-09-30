@@ -26,7 +26,7 @@ def decode(path, width=640, info=None):
     h = int(round(info["height"] * width / info["width"] / 2.0)) * 2
     p = subprocess.Popen(
         ["ffmpeg", "-v", "error", "-nostdin", "-i", path, "-vf", f"scale={width}:{h}",
-         "-vsync", "passthrough", "-f", "rawvideo", "-pix_fmt", "rgb24", "-"],
+         "-fps_mode", "passthrough", "-f", "rawvideo", "-pix_fmt", "rgb24", "-"],
         stdout=subprocess.PIPE, bufsize=10 ** 7)
     size = width * h * 3
     try:

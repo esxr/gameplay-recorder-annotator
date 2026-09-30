@@ -18,7 +18,7 @@ def probe(mp4):
 
 
 def read_frame(mp4, n, w, h):
-    cmd = ["ffmpeg", "-v", "error", "-i", mp4, "-vf", f"select=eq(n\\,{n})", "-vsync", "0",
+    cmd = ["ffmpeg", "-v", "error", "-i", mp4, "-vf", f"select=eq(n\\,{n})", "-fps_mode", "passthrough",
            "-frames:v", "1", "-f", "rawvideo", "-pix_fmt", "rgb24", "-"]
     raw = subprocess.run(cmd, capture_output=True, check=True).stdout
     return raw if len(raw) == w * h * 3 else None
