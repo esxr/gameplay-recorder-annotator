@@ -4,9 +4,9 @@
 
 A macOS screen recorder with the same toolbar as the built-in one (⇧⌘5), plus an engine that converts each 60 fps recording into a queryable semantic state stream. You can then ask Claude questions about the recording and get answers that cite exact frames.
 
-![Demo: the review window annotating a 3D city gameplay recording, answering "When did the cash first increase?" and playing it back with region modes and entity boxes](docs/demo.gif)
+![Demo: the review window playing an annotated 3D city gameplay recording with region modes, entity boxes, annotations, events and an answered question](docs/demo.gif)
 
-<sub>Demo: a 3D city game (Roblox) recorded with the app at 60 fps. The review window annotates it (8×6 region-mode grid, entity boxes, 1 fps Claude annotations, events lane) and answers a question with the exact frame, then plays the annotated recording at 1.5× as the cash goes $60 → $85 → $95. Parts are sped up.</sub>
+<sub>Demo: a 3D city game (Roblox) recorded with the app at 60 fps, played back in the review window at 2× speed. It shows the 8×6 region-mode grid, entity boxes, the 1 fps Claude annotations and the events lane. The engine's answer to "When did the cash first increase, and by how much?" cites frame 338, where the cash goes from $60 to $85.</sub>
 
 ## Quick start
 
