@@ -50,6 +50,12 @@ final class ReviewWindowController: NSObject, ReviewPresenting, NSWindowDelegate
         window.orderFrontRegardless()
     }
 
+    /// Automation hook (`grctl play`): restart playback from 0 in every open review window, without taking focus.
+    func playFromStart() {
+        for e in entries.values { e.model.seek(toMs: 0); e.model.player.play() }
+        AppLog.log("review_play", ["windows": entries.count])
+    }
+
     func windowWillClose(_ notification: Notification) {
         guard let w = notification.object as? NSWindow, let e = entries.removeValue(forKey: ObjectIdentifier(w)) else { return }
         if let m = e.keyMonitor { NSEvent.removeMonitor(m) }

@@ -65,6 +65,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         DistributedNotificationCenter.default().addObserver(forName: .init("com.operantlabs.GameplayRecorder.primary"), object: nil, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated { self?.toolbar.triggerPrimary() }
         }
+        DistributedNotificationCenter.default().addObserver(forName: .init("com.operantlabs.GameplayRecorder.play"), object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.reviews.forEach { $0.playFromStart() } }
+        }
         // `--review <video.mp4>` opens an existing recording without recording.
         let args = CommandLine.arguments
         if let i = args.firstIndex(of: "--review"), i + 1 < args.count {
