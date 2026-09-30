@@ -38,14 +38,14 @@ The engine was measured on a 76 s, 60 fps app recording of the [test game](testg
 | Region-frames that skip the vision model (COPY + PROPAGATE + REVALIDATE) | 99.58% | [pipeline-G1-report.txt](proofs/pipeline-G1-report.txt) |
 | Frames that call the vision model | 20 / 4580 = 0.44% | [pipeline-G1-report.txt](proofs/pipeline-G1-report.txt) |
 | State rebuilt from snapshot + deltas = direct replay | 20 / 20 | [pipeline-G2-report.txt](proofs/pipeline-G2-report.txt) |
-| Storage vs dense per-frame JSON | 14.4× smaller | [pipeline-G2-report.txt](proofs/pipeline-G2-report.txt) |
+| Storage vs dense per-frame JSON | 14.3× smaller | [pipeline-G2-report.txt](proofs/pipeline-G2-report.txt) |
 | Identity switches | 0.37% | [pipeline-G2-report.txt](proofs/pipeline-G2-report.txt) |
 | 1- and 2-frame flashes found at the exact frame | 10 / 10 (1 fps sampling: 0 / 10) | [pipeline-G3-report.txt](proofs/pipeline-G3-report.txt) |
-| HUD changes at the exact frame with the correct value | health 10 / 10, ammo 30 / 31 | [pipeline-G3-report.txt](proofs/pipeline-G3-report.txt) |
+| HUD changes at the exact frame with the correct value | health 10 / 10, ammo 31 / 31 | [pipeline-G3-report.txt](proofs/pipeline-G3-report.txt) |
 | State fields missing provenance | 0 of 89920 | [pipeline-G4-report.txt](proofs/pipeline-G4-report.txt) |
 | Query ops over HTTP returning 200 | 8 / 8 | [pipeline-G5-api.txt](proofs/pipeline-G5-api.txt) |
 | Questions answered correctly (claude-sonnet-5-5, questions frozen before answering) | 9 / 10 | [pipeline-G5-report.txt](proofs/pipeline-G5-report.txt) |
-| Largest compiled context | 3845 tokens (0.084% of all-frame image input) | [pipeline-G5-report.txt](proofs/pipeline-G5-report.txt) |
+| Largest compiled context | 3849 tokens (0.084% of all-frame image input) | [pipeline-G5-report.txt](proofs/pipeline-G5-report.txt) |
 | In-app run: all 7 stages, then an answered question | capture → change → schedule → state → store → compile → answer | [pipeline-G6-applog.txt](proofs/pipeline-G6-applog.txt), [pipeline-G6-ask.png](proofs/pipeline-G6-ask.png) |
 
 ## Repository layout

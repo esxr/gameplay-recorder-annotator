@@ -1,9 +1,9 @@
 == G4: provenance, confidence, evidence ==
 state field-frames checked=89920  missing provenance (any of ('v', 'conf', 'source', 'f', 'bbox'))=0  (0: PASS)
-events=116 missing confidence/source/evidence=0
+events=119 missing confidence/source/evidence=0
 mean conf observed: 0.883 (n=25139)
 mean conf propagated: 0.729 (n=9905)
-mean conf inferred: 0.668 (n=54876)
+mean conf inferred: 0.718 (n=54876)
 propagated < observed: PASS
-event evidence crops: 116 referenced, 116 open on disk
+event evidence crops: 119 referenced, 119 open on disk
 montage of 5 evidence crops + claims -> proofs/pipeline-G4-evidence.png

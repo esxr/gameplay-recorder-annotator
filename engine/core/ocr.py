@@ -149,3 +149,46 @@ def ocr_line_confirm(arr, whitelist=None, attempt=0):
         return a
     c = ocr_line(pad, 3.5, whitelist)
     return c if c in (a, b) else a
+
+
+CUR_RE = re.compile(r"(?<![+\-\d])[$]\s?(\d[\d,]*)")
+NUMONLY_RE = re.compile(r"[^\w$+\-]*(\d[\d,]*)[^\w$]*")
+
+
+def parse_value(text, kind=None):
+    """Keyless HUD value: '$95' → ('currency', 95); '1250' → ('number', 1250). '+$25' deltas are ignored.
+    With kind given, only that kind is accepted. Returns (kind, int) or None."""
+    t = text.strip()
+    if kind in (None, "currency"):
+        m = CUR_RE.search(t)
+        if m:
+            try:
+                return "currency", int(m.group(1).replace(",", ""))
+            except ValueError:
+                return None
+    if kind in (None, "number"):
+        m = NUMONLY_RE.fullmatch(t)
+        if m and len(m.group(1).replace(",", "")) >= 2:
+            return "number", int(m.group(1).replace(",", ""))
+    return None
+
+
+def ocr_value(arr, whitelist=None, attempt=0):
+    """Read a small keyless value box (e.g. '$95' pill): several paddings/scales/polarities, majority over the
+    parsed values (≥2 agreeing reads) → the raw text of a winning read, else ''."""
+    if arr.size == 0:
+        return ""
+    def pad(a, v):
+        return np.pad(a, ((12, 12), (16, 16), (0, 0)), constant_values=v)
+    variants = [(arr, 3), (pad(arr, 0), 3), (pad(255 - arr, 255), 3), (arr, 2), (pad(arr, 0), 4)]
+    from collections import Counter
+    got = []
+    for a, sc in variants:
+        t = ocr_line(np.ascontiguousarray(a.astype(np.uint8)), sc)
+        r = parse_value(t)
+        if r:
+            got.append((r, t))
+            c = Counter(g[0] for g in got).most_common(1)[0]
+            if c[1] >= 2:
+                return next(t for rr, t in got if rr == c[0])
+    return ""

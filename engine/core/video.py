@@ -59,3 +59,33 @@ def sample_median(path, t_start, span_s, w, h, n=25, sub=4):
         return None
     arr = np.frombuffer(p.stdout[:n_fr * w * h * 3], np.uint8).reshape(n_fr, h, w, 3)[:, ::sub, ::sub]
     return np.median(arr, axis=0).astype(np.float32)
+
+
+def sample_frames(path, t_start, span_s, w, h, n=24):
+    """~n frames sampled over [t_start, t_start+span_s] at w×h → (k, h, w, 3) uint8 or None."""
+    step = max(span_s / n, 0.05)
+    p = subprocess.run(["ffmpeg", "-v", "error", "-nostdin", "-ss", f"{max(0.0, t_start):.3f}", "-t", f"{span_s:.3f}",
+                        "-i", path, "-vf", f"fps={1.0 / step:.4f},scale={w}:{h}", "-f", "rawvideo",
+                        "-pix_fmt", "rgb24", "-"], capture_output=True)
+    k = len(p.stdout) // (w * h * 3)
+    if k < 3:
+        return None
+    return np.frombuffer(p.stdout[:k * w * h * 3], np.uint8).reshape(k, h, w, 3)
+
+
+def decode_crop(path, x, y, w, h):
+    """Yield every decoded frame's full-resolution crop (x, y, w, h px) — frame-aligned with decode()."""
+    p = subprocess.Popen(
+        ["ffmpeg", "-v", "error", "-nostdin", "-i", path, "-vf", f"crop={w}:{h}:{x}:{y}",
+         "-fps_mode", "passthrough", "-f", "rawvideo", "-pix_fmt", "rgb24", "-"],
+        stdout=subprocess.PIPE, bufsize=10 ** 6)
+    size = w * h * 3
+    try:
+        while True:
+            buf = p.stdout.read(size)
+            if len(buf) < size:
+                break
+            yield np.frombuffer(buf, np.uint8).reshape(h, w, 3)
+    finally:
+        p.stdout.close()
+        p.wait()

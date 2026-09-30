@@ -37,11 +37,25 @@ HIDE_FRAMES_S = 3.0          # lost-track window (occlusion) before entity_remov
 CONFIRM_MOVE = 0.012         # a blob must travel this far (normalized) before it becomes an entity
 REID_COLOR = 60.0            # max mean-colour distance (sum |dRGB|) for re-identification
 SNAP_EVERY = 300
+CUT_HIST = 0.3               # colour-histogram distance (0..1) a scene cut must reach (camera motion stays low)
+VAL_WIN, VAL_VOTES = 7, 4     # keyless HUD value vote: ≥4 agreeing of the last 7 reads
+VAL_PERSIST_S = 0.1          # a keyless HUD value must be read unchanged this long before it is committed
 EMIT_MOVE = 0.006             # min normalized bbox move before a propagated bbox is re-emitted
 
 
 def rnd(x, n=4):
     return round(float(x), n)
+
+
+def chist(sm):
+    """64-bin joint colour histogram (normalised) of a small frame."""
+    q = (sm // 64).astype(np.int32)
+    h = np.bincount((q[..., 0] * 16 + q[..., 1] * 4 + q[..., 2]).ravel(), minlength=64).astype(float)
+    return h / max(1.0, h.sum())
+
+
+def hist_dist(a, b):
+    return 0.5 * float(np.abs(chist(a) - chist(b)).sum())
 
 
 def field(v, conf, source, f, bbox=None, crop=None):
@@ -171,6 +185,11 @@ class Engine:
         self.ocr_pool = ThreadPoolExecutor(max_workers=6)
         self.fullrefresh_ocr = 0
         self.vlm_wait_left = 45.0     # total seconds the pipeline may block on VLM results (slow uplink)
+        self.value_boxes = {}         # keyless HUD values (e.g. cash pill): name -> {kind, px, gen, gi, cur}
+        self.val_pend = {}            # name -> recent (f, value) reads awaiting a majority/persistence decision
+        self.value_calls = 0
+        self.value_tries = 0
+        self.value_next = 0
 
     # ------------------------------------------------------------------ helpers
     def crop_save(self, frame, bbox, f, name, pad=0.01):
@@ -259,35 +278,183 @@ class Engine:
             self.text_boxes[rid] = nb
             crop = self.crop_save(frame, nb, f, f"text_{rid}")
             self.state["text"][rid] = field(txt, 0.8, "observed", f, nb, crop)
+        self.rebuild_box_cells()
+
+    def rebuild_box_cells(self):
         self.box_cells = {}
         for name, nb in list(self.hud_boxes.items()) + [("text:" + k, v) for k, v in self.text_boxes.items()]:
             for c in cells_of(nb):
                 self.box_cells.setdefault(c, []).append(name)
 
-    def box_sig(self, frame, nb):
+    # ------------------------------------------------------------------ keyless HUD values (cash, counters)
+    def discover_values(self, f, frame):
+        """Find small, static, high-contrast boxes (pixels stable over ~10 s while the scene around them moves)
+        whose full-resolution OCR parses as a currency/number value → tracked as hud.<name> fields."""
+        self.value_tries += 1
+        self.value_next = f + int(10 * self.fps)
         H, W = frame.shape[:2]
-        x0, y0, x1, y1 = self.box_px(nb, H, W)
-        g = frame[y0:y1, x0:x1].mean(axis=2)
+        A = vid.sample_frames(self.video, f / self.fps, 10.0, W, H, 24)
+        if A is None or len(A) < 8:
+            return
+        g = A.astype(np.float32).mean(axis=3)
+        med = np.median(g, axis=0)
+        stable = (np.abs(g - med) < 12).mean(axis=0) >= 0.75
+        edge = (np.abs(np.diff(med, axis=1, prepend=med[:, :1])) + np.abs(np.diff(med, axis=0, prepend=med[:1]))) > 40
+        m = stable & edge
+        h2, w2 = H // 2, W // 2
+        mm = m[:h2 * 2, :w2 * 2].reshape(h2, 2, w2, 2).any(axis=(1, 3))
+        pad = np.pad(mm, 2)
+        dil = np.zeros_like(mm)
+        for dy in range(5):
+            for dx in range(5):
+                dil |= pad[dy:dy + h2, dx:dx + w2]
+        cands = []
+        for x0, y0, x1, y1, area in blobs(dil, min_area=8, max_blobs=60):
+            x0, y0, x1, y1 = 2 * x0, 2 * y0, 2 * x1, 2 * y1
+            if not (0.012 * H < y1 - y0 < 0.12 * H and x1 - x0 < 0.35 * W and x1 - x0 >= y1 - y0):
+                continue
+            sub = stable[y0:y1, x0:x1]
+            rr = np.nonzero(sub.mean(axis=1) >= 0.5)[0]
+            if len(rr) < 4:
+                continue
+            ry0, ry1 = rr[0], rr[-1] + 1
+            cc = np.nonzero(sub[ry0:ry1].mean(axis=0) >= 0.5)[0]
+            if len(cc) < 4:
+                continue
+            bx0, bx1, by0, by1 = x0 + cc[0], x0 + cc[-1] + 1, y0 + ry0, y0 + ry1
+            nb = [bx0 / W, by0 / H, (bx1 - bx0) / W, (by1 - by0) / H]
+            if nb[3] < 0.012 or nb[2] < 0.01:
+                continue
+            cx, cy = nb[0] + nb[2] / 2, nb[1] + nb[3] / 2
+            if any(b[0] <= cx <= b[0] + b[2] and b[1] <= cy <= b[1] + b[3]
+                   for b in list(self.hud_boxes.values()) + list(self.text_boxes.values())):
+                continue
+            cands.append((float(edge[by0:by1, bx0:bx1].mean()), nb))
+        if not cands:
+            return
+        cands = [c[1] for c in sorted(cands, key=lambda c: -c[0])[:16]]
+        FW, FH = self.info["width"], self.info["height"]
+        reads = {}
+        for ti, t in enumerate((f / self.fps, f / self.fps + 3.0, f / self.fps + 6.0)):
+            png = os.path.join(self.out, "evidence", f"_val_{f}_{ti}.png")
+            vid.extract_full(self.video, t, png)
+            if not os.path.exists(png):
+                continue
+            full = np.array(Image.open(png).convert("RGB"))
+            os.remove(png)
+            jobs = []
+            for i, nb in enumerate(cands):
+                px = self.full_px(nb, FW, FH)
+                jobs.append((i, self.ocr_pool.submit(ocrmod.ocr_value,
+                                                     full[px[1]:px[1] + px[3], px[0]:px[0] + px[2]].copy())))
+            for i, fut in jobs:
+                r = ocrmod.parse_value(fut.result())
+                if r:
+                    reads.setdefault(i, []).append(r[0])
+        for i, kinds in sorted(reads.items()):
+            kind = Counter(kinds).most_common(1)[0][0]
+            base = "cash" if kind == "currency" else "value"
+            n = 1
+            name = base if base == "cash" else f"{base}{n}"
+            while name in self.hud_boxes:
+                n += 1
+                name = f"{base}{n}"
+            nb = cands[i]
+            px = self.full_px(nb, FW, FH)
+            self.value_boxes[name] = {"kind": kind, "px": px, "gen": vid.decode_crop(self.video, *px), "gi": -1,
+                                      "cur": None}
+            self.hud_boxes[name] = nb
+            self.log(f"STAGE state value_box name={name} kind={kind} bbox={[rnd(v, 3) for v in nb]}")
+            cur = self.value_crop(name, f)
+            if cur is not None:
+                self.revalidate_box(f, frame, name, nb, True, crop_arr=cur)
+        self.rebuild_box_cells()
+
+    @staticmethod
+    def full_px(nb, FW, FH):
+        x0 = int(nb[0] * FW) // 2 * 2; y0 = int(nb[1] * FH) // 2 * 2
+        w = max(8, int(round(nb[2] * FW / 2)) * 2); h = max(8, int(round(nb[3] * FH / 2)) * 2)
+        return x0, y0, min(w, FW - x0), min(h, FH - y0)
+
+    def value_crop(self, name, f):
+        """Full-resolution crop of a value box at frame f (dedicated frame-aligned crop decoder)."""
+        vb = self.value_boxes[name]
+        while vb["gi"] < f:
+            try:
+                vb["cur"] = next(vb["gen"])
+            except StopIteration:
+                return None
+            vb["gi"] += 1
+        return vb["cur"]
+
+    def apply_value(self, f, frame, name, nb, txt):
+        """Commit a keyless HUD value only when it wins a majority of the recent reads (≥VAL_VOTES of the last
+        VAL_WIN), persists ≥VAL_PERSIST_S and is a plausible delta; the change is dated to the first frame the
+        new value was read. Single misreads (e.g. '$35' for '$85') and transient overlays are outvoted."""
+        r = ocrmod.parse_value(txt, self.value_boxes[name]["kind"])
+        if r is None:
+            return                      # unreadable (transient overlay / popup) → no evidence either way
+        v = r[1]
+        old = self.state["hud"].get(name)
+        if old is not None and v != old["v"] and abs(v - old["v"]) > max(1000, 10 * abs(old["v"])):
+            return                      # implausible jump → OCR noise
+        if old is not None and v == old["v"] and name not in self.val_pend:
+            return
+        reads = self.val_pend.setdefault(name, [])
+        reads.append((f, v))
+        del reads[:-VAL_WIN]
+        reads[:] = [x for x in reads if f - x[0] <= 2 * self.fps]   # votes older than 2 s expire
+        top, n = Counter(x[1] for x in reads).most_common(1)[0]
+        if n < VAL_VOTES:
+            return
+        if old is not None and top == old["v"]:
+            self.val_pend.pop(name, None)   # the old value still holds → the odd reads were noise
+            return
+        fs = [x[0] for x in reads if x[1] == top]
+        if fs[-1] - fs[0] < max(2, int(VAL_PERSIST_S * self.fps)):
+            return
+        f0 = fs[0]
+        self.val_pend.pop(name, None)
+        crop = self.crop_save(frame, nb, f0, f"hud_{name}")
+        if old is not None:
+            self.event("ui_value_changed", f0, f0, 0.85, "observed", f0, nb, crop, entity=f"hud.{name}",
+                       **{"from": old["v"], "to": top})
+        fld = field(top, 0.9, "observed", f0, nb, crop)
+        self.state["hud"][name] = fld
+        self.backpatch("hud", name, fld, f0)
+
+    def box_sig(self, frame, nb, crop_arr=None):
+        if crop_arr is None:
+            H, W = frame.shape[:2]
+            x0, y0, x1, y1 = self.box_px(nb, H, W)
+            crop_arr = frame[y0:y1, x0:x1]
+        g = crop_arr.mean(axis=2)
         if g.size == 0:
             return None, None
         th = g > (g.max() + g.min()) / 2
-        return hashlib.md5(np.packbits(th).tobytes() + str(th.shape).encode()).hexdigest(), frame[y0:y1, x0:x1]
+        return hashlib.md5(np.packbits(th).tobytes() + str(th.shape).encode()).hexdigest(), crop_arr
 
-    def revalidate_box(self, f, frame, name, nb, is_hud, confirm=False):
+    def revalidate_box(self, f, frame, name, nb, is_hud, confirm=False, crop_arr=None):
         """REVALIDATE: checksum of binarised crop; OCR (async tesseract pool) only on an unseen checksum.
         Results are applied strictly in frame order (cache hits go through the same queue)."""
-        sig, crop_arr = self.box_sig(frame, nb)
+        sig, crop_arr = self.box_sig(frame, nb, crop_arr)
         if sig is None:
             return
         key = (name, sig, confirm)
         if key in self.ocr_cache:
             fut = Future(); fut.set_result(self.ocr_cache[key])
+        elif name in self.value_boxes:          # own budget: never starves (or is starved by) text/HUD boxes
+            if self.value_calls > max(600, 0.3 * self.nb):
+                return
+            self.value_calls += 1
+            fut = self.ocr_pool.submit(ocrmod.ocr_value, crop_arr.copy())
         else:
             if self.ocr_calls > max(400, 0.15 * self.nb):
                 return
             self.ocr_calls += 1
             fn = ocrmod.ocr_line_confirm if confirm else ocrmod.ocr_line_robust
-            fut = self.ocr_pool.submit(fn, crop_arr.copy(), ocrmod.WL if is_hud else None, self.ocr_retry.get(name, 0))
+            wl = ocrmod.WL if is_hud and name not in self.value_boxes else None
+            fut = self.ocr_pool.submit(fn, crop_arr.copy(), wl, self.ocr_retry.get(name, 0))
         self.ocr_q.append((fut, key, f, frame, name, nb, is_hud))
 
     def poll_ocr(self, wait=False, wait_one=False):
@@ -302,7 +469,9 @@ class Engine:
             self.apply_ocr(f0, fr0, name, nb, is_hud, txt, confirm=key[2])
 
     def apply_ocr(self, f, frame, name, nb, is_hud, txt, confirm=False):
-        if is_hud:
+        if is_hud and name in self.value_boxes:
+            self.apply_value(f, frame, name, nb, txt)
+        elif is_hud:
             vals = [v for k, v in ocrmod.parse_hud(txt) if k == name]
             old = self.state["hud"].get(name)
             cand = self.hud_cand.get(name)
@@ -400,6 +569,9 @@ class Engine:
                         break
                     self.poll_ocr(wait_one=True)
                     continue
+                if self.val_pend and len(self.outq) < 900 and \
+                        self.outq[0]["f"] >= min(p[0][0] for p in self.val_pend.values() if p) - 1:
+                    break                    # a HUD value awaiting persistence may back-patch these frames
                 if len(self.outq) <= 3:      # keep a few frames for flash back-dating
                     break
             e = self.outq.popleft()
@@ -566,7 +738,9 @@ class Engine:
                             ok2, fr2 = back(look[1])
                             if ok2:
                                 k = 2
-                            elif frac >= CUT_FRAC and fr1 >= CUT_FRAC and fr2 >= CUT_FRAC and f - self.last_F > 30:
+                            elif frac >= CUT_FRAC and fr1 >= CUT_FRAC and fr2 >= CUT_FRAC and f - self.last_F > 30 \
+                                    and hist_dist(sm, ref) >= CUT_HIST and hist_dist(look[1], ref) >= CUT_HIST:
+                                # a cut changes the colour distribution; continuous camera motion keeps it
                                 is_F = True
                     if k:
                         flash_until = f + k - 1
@@ -758,6 +932,8 @@ class Engine:
                     self.pending.append((self.vlm.submit(frame, vlmmod.SCENE_PROMPT), "scene", (f, crop)))
                     vlm_this = True
                 self.discover_text(f, frame)
+                if not self.value_boxes and self.value_tries < 3:
+                    self.discover_values(f, frame)
                 for c in range(NREG):
                     self.reg_conf[c] = 1.0
             else:
@@ -799,7 +975,24 @@ class Engine:
             # ---------------------------------------------------------- state: HUD/text revalidate, fields
             ts = time.time()
             if not in_flash and not is_F and ref is not None:
+                if not self.value_boxes and self.value_tries < 3 and f >= self.value_next:
+                    self.discover_values(f, frame)
                 for name, nb in list(self.hud_boxes.items()) + [("text:" + k, v) for k, v in self.text_boxes.items()]:
+                    if name in self.value_boxes:
+                        cur = self.value_crop(name, f)
+                        if cur is None:
+                            continue
+                        hh_, ww_ = cur.shape[:2]    # interior only: rounded corners/rim show the moving scene
+                        cur16 = cur[hh_ // 5:hh_ - hh_ // 5, ww_ // 10:ww_ - ww_ // 10].astype(np.int16)
+                        lastv = self.box_last.get(name)
+                        pend = self.val_pend.get(name)
+                        vb = self.value_boxes[name]
+                        if lastv is None or float(np.abs(cur16 - lastv).mean()) > 4.0 or \
+                                (pend and f - vb.get("last_read", -99) >= 3):   # undecided vote → keep reading
+                            vb["last_read"] = f
+                            self.box_last[name] = cur16
+                            self.revalidate_box(f, frame, name, nb, True, crop_arr=cur)
+                        continue
                     x0, y0, x1, y1 = self.box_px(nb, H, W)
                     x1 = max(x1, x0 + 1); y1 = max(y1, y0 + 1)
                     cur = frame[y0:y1, x0:x1].astype(np.int16)
@@ -885,7 +1078,7 @@ class Engine:
                  f" skip_vlm_pct={100 * skip:.1f} vlm_frames={self.vlm_frames} "
                  f"vlm_pct={100 * self.vlm_frames / max(1, n_written):.2f}")
         self.log(f"STAGE state entities={self.next_tid - 1} events={len(self.events)} hud={list(self.state['hud'])} "
-                 f"ocr_calls={self.ocr_calls}")
+                 f"ocr_calls={self.ocr_calls} value_ocr_calls={self.value_calls}")
         # events + summary + meta
         with open(os.path.join(self.out, "events.jsonl"), "w") as fh:
             for e in sorted(self.events, key=lambda e: (e["f_start"], e["id"])):
