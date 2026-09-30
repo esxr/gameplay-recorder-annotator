@@ -1,4 +1,4 @@
-# GOAL: Public README with demo GIF + full PRD, live on GitHub by 2026-09-30 20:00 AEST
+# GOAL: Public README with demo GIF + full PRD, live on GitHub by 2026-10-01 01:00 AEST
 
 Repo `github.com/esxr/gameplay-recorder-annotator` (PUBLIC), file `README.md`. Source: `knowledge/raw/semantic-video-state-engine-prd.md` (72 sections; do not edit it). Times AEST.
 
@@ -9,10 +9,10 @@ Repo `github.com/esxr/gameplay-recorder-annotator` (PUBLIC), file `README.md`. S
 **Proof: made by the agent; Pranav checks nothing**
 - Save to `proofs/readme-*`; open every PNG (Read tool) and name what it shows. `scripts/readme_check.py` prints every metric below.
 
-## G1: Demo GIF in the first 15 lines shows the app end to end
-- TO-DO: Record a region holding only the test game, toolbar and review window: toolbar → record game → stop → review with region overlay, events and an "Ask" answer; save `docs/demo.gif`.
-- NOT TO-DO: No reuse of `proofs/G5-e2e.mp4` (shows private windows). No mockups.
-- PROOF: `ffprobe`: 15-60 s, ≥ 10 fps, width ≥ 800 px, size ≤ 10 MB; `proofs/readme-G1-sheet.png` (1 frame per 2 s) shows toolbar, game, review overlay and answer, 0 frames with other apps.
+## G1: Demo GIF in the first 15 lines shows the app on Pranav's 3D gameplay recording
+- TO-DO: Use `Recording 2026-09-30 21.29.12.mp4` (3D city game) cropped to the game viewport: gameplay → the app's review window of it with region overlay, annotations, events and an "Ask" answer; save `docs/demo.gif`.
+- NOT TO-DO: No Roblox Studio chrome, file paths or other apps in any frame. No mockups.
+- PROOF: `ffprobe`: 15-60 s, ≥ 10 fps, width ≥ 800 px, size ≤ 10 MB; `proofs/readme-G1-sheet.png` (1 frame per 2 s) shows gameplay, review overlay and answer, 0 frames with other apps or paths.
 - NOT-PROOF: A still PNG renamed .gif. A GIF checked only at its first frame.
 
 ## G2: Top section lets a new user build and run in ≤ 5 commands

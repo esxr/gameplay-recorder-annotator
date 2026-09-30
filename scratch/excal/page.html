@@ -1,0 +1,18 @@
+<!doctype html><html><head><meta charset="utf-8">
+<script>window.EXCALIDRAW_EXPORT_SOURCE = "https://excalidraw.com"; window.EXCALIDRAW_ASSET_PATH = location.origin + "/node_modules/@excalidraw/excalidraw/dist/prod/";</script>
+<script type="module">
+import "./out/entry.js";
+import { DIAGRAMS, makeKit } from "./diagrams.js";
+window.build = async (name) => {
+  const { exportToSvg, convertToExcalidrawElements, serializeAsJSON, FONT_FAMILY } = window.EXC;
+  const kit = makeKit(FONT_FAMILY);
+  const skel = DIAGRAMS[name](kit);
+  const elements = convertToExcalidrawElements(skel, { regenerateIds: false });
+  const appState = { viewBackgroundColor: "#ffffff", exportBackground: true, exportWithDarkMode: false, exportEmbedScene: true, gridSize: null };
+  const svg = await exportToSvg({ elements, appState, files: {}, exportPadding: 24 });
+  const json = serializeAsJSON(elements, { viewBackgroundColor: "#ffffff", gridSize: null }, {}, "local");
+  return { svg: svg.outerHTML, json };
+};
+window.names = () => Object.keys(DIAGRAMS);
+window.PAGE_READY = true;
+</script></head><body></body></html>
